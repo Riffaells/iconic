@@ -6,19 +6,27 @@ import ColorUtils from 'src/ColorUtils';
 import IconManager from 'src/managers/IconManager';
 import RuleEditor from 'src/dialogs/RuleEditor';
 import IconPicker from 'src/dialogs/IconPicker';
+import { Debouncer } from 'src/utils/Debouncer';
 
 /**
  * Handles icons in the editor window of Markdown tabs.
  */
 export default class EditorIconManager extends IconManager {
+	private debouncer = new Debouncer();
+
 	constructor(plugin: IconicPlugin) {
 		super(plugin);
 
-		// Style hashtags in reading mode
+		// Style hashtags in reading mode (deferred to not block rendering)
 		this.plugin.registerMarkdownPostProcessor(sectionEl => {
-			const tags = this.plugin.getTagItems();
 			const tagEls = sectionEl.findAll('a.tag');
-			this.refreshReadingModeHashtags(tags, tagEls);
+			if (tagEls.length === 0) return;
+			
+			// Defer icon updates to next frame to not block markdown rendering
+			requestAnimationFrame(() => {
+				const tags = this.plugin.getTagItems();
+				this.refreshReadingModeHashtags(tags, tagEls);
+			});
 		});
 
 		const manager = this;
@@ -51,11 +59,18 @@ export default class EditorIconManager extends IconManager {
 			}
 		}));
 
-		// Initialize MarkdownViews as they open
+		// Initialize MarkdownViews as they open (deferred to not block content loading)
 		this.plugin.registerEvent(this.app.workspace.on('active-leaf-change', leaf => {
 			if (leaf?.view instanceof MarkdownView) {
-				this.observeViewIcons(leaf.view);
-				this.refreshViewIcons(leaf.view);
+				const view = leaf.view;
+				// Use longer delay to not block file content loading
+				this.debouncer.debounce('leaf-change', () => {
+					// Defer to next idle period to not block rendering
+					requestIdleCallback(() => {
+						this.observeViewIcons(view);
+						this.refreshViewIcons(view);
+					}, { timeout: 500 });
+				}, 100); // Increased from 50ms
 			}
 		}));
 
@@ -67,9 +82,15 @@ export default class EditorIconManager extends IconManager {
 			}
 		}
 
-		// If we add a new property to a file, refresh property icons
-		this.plugin.registerEvent(this.app.vault.on('modify', () => {
-			this.refreshIcons();
+		// If we add a new property to a file, refresh property icons (debounced)
+		this.plugin.registerEvent(this.app.vault.on('modify', (file) => {
+			this.debouncer.debounce('vault-modify', () => {
+				// Only refresh if the modified file is currently open
+				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (activeView?.file?.path === file.path) {
+					this.refreshViewIcons(activeView);
+				}
+			}, 150);
 		}));
 	}
 
@@ -226,12 +247,30 @@ export default class EditorIconManager extends IconManager {
 		}
 
 		// Set up title wrapper
-		const wrapperEl = headerEl.find(':scope > .iconic-title-wrapper')
-			?? createDiv({ cls: 'iconic-title-wrapper' });
-		const iconEl = wrapperEl.find(':scope > .iconic-icon')
-			?? createDiv({ cls: 'iconic-icon' });
-		wrapperEl.append(iconEl, titleEl);
-		headerEl.prepend(wrapperEl);
+		let wrapperEl = headerEl.find(':scope > .iconic-title-wrapper');
+		if (!wrapperEl) {
+			wrapperEl = createDiv({ cls: 'iconic-title-wrapper' });
+		}
+		
+		// Ensure correct structure: iconEl, then titleEl, nothing else
+		let iconEl = wrapperEl.find(':scope > .iconic-icon');
+		if (titleEl.parentElement !== wrapperEl || !iconEl) {
+			wrapperEl.empty();
+			iconEl = createDiv({ cls: 'iconic-icon' });
+			wrapperEl.append(iconEl, titleEl);
+		}
+		
+		// Move any extra children out of the wrapper (like metadata-container)
+		for (const child of Array.from(wrapperEl.children)) {
+			if (child !== titleEl && child !== iconEl && child instanceof HTMLElement) {
+				wrapperEl.after(child);
+			}
+		}
+
+		// Ensure wrapper is first child of header
+		if (headerEl.firstChild !== wrapperEl) {
+			headerEl.prepend(wrapperEl);
+		}
 
 		// Re-select title if necessary
 		if (isSelected) {
@@ -245,18 +284,21 @@ export default class EditorIconManager extends IconManager {
 		// Get file and/or rule icon
 		const file = this.plugin.getFileItem(view.file.path);
 		const rule = this.plugin.ruleManager.checkRuling('file', file.id) ?? file;
-		if (!rule.icon && !rule.color) file.iconDefault = null;
+		
+		// Hide default icon if no custom icon/color is set
+		const itemToShow = { ...rule };
+		if (!itemToShow.icon && !itemToShow.color) itemToShow.iconDefault = null;
 
 		// Refresh icon
 		if (this.plugin.isSettingEnabled('clickableIcons')) {
-			this.refreshIcon(rule, iconEl, () => {
+			this.refreshIcon(itemToShow, iconEl, () => {
 				IconPicker.openSingle(this.plugin, file, (newIcon, newColor) => {
 					this.plugin.saveFileIcon(file, newIcon, newColor);
 					this.plugin.refreshManagers('file');
 				});
 			});
 		} else {
-			this.refreshIcon(rule, iconEl);
+			this.refreshIcon(itemToShow, iconEl);
 		}
 		iconEl.addClass('iconic-icon');
 
@@ -519,6 +561,7 @@ export default class EditorIconManager extends IconManager {
 	 * @override
 	 */
 	unload(): void {
+		this.debouncer.cancelAll();
 		this.refreshIcons(true);
 		this.stopMutationObservers();
 		super.unload();
