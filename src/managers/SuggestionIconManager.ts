@@ -211,20 +211,33 @@ export default class SuggestionIconManager extends IconManager {
 	 */
 	private refreshTagIcon(value: any, el: HTMLElement): void {
 		const tagId = value?.tag;
-		if (tagId) {
-			el.addClass('mod-complex', 'iconic-item');
-			const tag = this.plugin.getTagItem(tagId);
-			const iconContainerEl = el.find(':scope > .suggestion-icon')
-				?? createDiv({ cls: 'suggestion-icon' });
-			const iconEl = iconContainerEl.find(':scope > .suggestion-flair')
-				?? iconContainerEl.createSpan({ cls: 'suggestion-flair' });
-			el.prepend(iconContainerEl);
-			if (tag) {
-				tag.iconDefault = 'lucide-tag';
-				if (!tag.icon && !tag.color) iconEl.addClass('iconic-invisible');
-				this.refreshIcon(tag, iconEl);
-			}
+		if (!tagId) return;
+
+		el.addClass('mod-complex', 'iconic-item');
+		
+		const iconContainerEl = el.find(':scope > .suggestion-icon')
+			?? createDiv({ cls: 'suggestion-icon' });
+		const iconEl = iconContainerEl.find(':scope > .suggestion-flair')
+			?? iconContainerEl.createSpan({ cls: 'suggestion-flair' });
+		el.prepend(iconContainerEl);
+
+		// Get icon directly from settings without calling getTagItem
+		const tagIcon = this.plugin.settings.tagIcons[tagId];
+		const icon = tagIcon?.icon ?? null;
+		const color = tagIcon?.color ?? null;
+
+		if (!icon && !color) {
+			iconEl.addClass('iconic-invisible');
 		}
+
+		this.refreshIcon({
+			id: tagId,
+			name: '#' + tagId,
+			category: 'tag',
+			iconDefault: 'lucide-tag',
+			icon,
+			color
+		}, iconEl);
 	}
 
 	/**
