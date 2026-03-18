@@ -1,4 +1,20 @@
-import { Command, Notice, Platform, Plugin, TAbstractFile, TFile, TFolder, View, WorkspaceFloating, WorkspaceLeaf, WorkspaceRoot, getIconIds, getLanguage, normalizePath } from 'obsidian';
+import {
+	Command,
+	Notice,
+	Platform,
+	Plugin,
+	TAbstractFile,
+	TFile,
+	TFolder,
+	View,
+	WorkspaceFloating,
+	WorkspaceLeaf,
+	WorkspaceRoot,
+	getIconIds,
+	getLanguage,
+	normalizePath,
+	MetadataCache
+} from 'obsidian';
 import IconicSettingTab from 'src/IconicSettingTab';
 import EMOJIS from 'src/Emojis';
 import STRINGS from 'src/Strings';
@@ -333,6 +349,7 @@ export default class IconicPlugin extends Plugin {
 			this.refreshBody();
 
 			this.registerEvent(this.app.vault.on('create', tAbstractFile => {
+				this.invalidateFileItemsCache();
 				const page = tAbstractFile instanceof TFile ? 'file' : 'folder';
 				// If a created file/folder triggers a new ruling, refresh icons
 				if (this.ruleManager.triggerRulings(page, 'rename', 'move', 'modify')) {
@@ -341,6 +358,7 @@ export default class IconicPlugin extends Plugin {
 			}));
 
 			this.registerEvent(this.app.vault.on('rename', (tAbstractFile, oldPath) => {
+				this.invalidateFileItemsCache();
 				const { path } = tAbstractFile;
 				const fileIcon = this.settings.fileIcons[oldPath];
 				if (fileIcon) {
@@ -365,9 +383,12 @@ export default class IconicPlugin extends Plugin {
 			}));
 			this.registerEvent(this.app.metadataCache.on('changed', tAbstractFile => {
 				this.onFileModify(tAbstractFile);
+				// Invalidate tag cache when metadata changes (tags might have changed)
+				this.invalidateTagItemsCache();
 			}));
 
 			this.registerEvent(this.app.vault.on('delete', (tAbstractFile) => {
+				this.invalidateFileItemsCache();
 				const { path } = tAbstractFile;
 				if (this.settings.rememberDeletedItems === false) {
 					delete this.settings.fileIcons[path];
@@ -633,36 +654,36 @@ export default class IconicPlugin extends Plugin {
 	 * Refresh all icon managers, or a specific group of them.
 	 */
 	refreshManagers(...categories: Category[]): void {
-		if (categories) {
+		if (categories.length === 0) {
 			categories = ['app', 'tab', 'file', 'folder', 'tag', 'property', 'ribbon'];
 		}
 		const managers = new Set<IconManager | undefined>();
 
-		if (categories?.includes('app')) {
+		if (categories.includes('app')) {
 			managers.add(this.appIconManager);
 		}
-		if (categories?.includes('tab')) {
+		if (categories.includes('tab')) {
 			managers.add(this.tabIconManager);
 		}
-		if (categories?.includes('file')) {
+		if (categories.includes('file')) {
 			managers.add(this.tabIconManager);
 			managers.add(this.fileIconManager);
 			managers.add(this.bookmarkIconManager);
 			managers.add(this.editorIconManager);
 		}
-		if (categories?.includes('folder')) {
+		if (categories.includes('folder')) {
 			managers.add(this.fileIconManager);
 			managers.add(this.bookmarkIconManager);
 		}
-		if (categories?.includes('tag')) {
+		if (categories.includes('tag')) {
 			managers.add(this.tagIconManager);
 			managers.add(this.editorIconManager);
 		}
-		if (categories?.includes('property')) {
+		if (categories.includes('property')) {
 			managers.add(this.propertyIconManager);
 			managers.add(this.editorIconManager);
 		}
-		if (categories?.includes('ribbon')) {
+		if (categories.includes('ribbon')) {
 			managers.add(this.ribbonIconManager);
 		}
 
@@ -868,14 +889,53 @@ export default class IconicPlugin extends Plugin {
 	}
 
 	/**
-	 * Get array of file definitions.
+	 * File items cache to avoid rebuilding on every call.
 	 */
+	private fileItemsCache: FileItem[] | null = null;
+	private fileItemsCacheVersion = 0;
+	private fileItemsCacheBuiltVersion = -1;
+	/**
+	 * Tag items cache to avoid rebuilding on every call.
+	 */
+	private tagItemsCache: TagItem[] | null = null;
+	private tagItemsCacheVersion = 0;
+	private tagItemsCacheBuiltVersion = -1;
+	private tagInvalidateTimer: number | null = null;
+	private cachedTagIds: string[] | null = null;
+
 	getFileItems(unloading?: boolean): FileItem[] {
+		if (unloading) {
+			return this.buildFileItems(unloading);
+		}
+
+		// Check if cache is still valid
+		if (this.fileItemsCacheBuiltVersion === this.fileItemsCacheVersion && this.fileItemsCache) {
+			return this.fileItemsCache;
+		}
+		
+		// Build and cache
+		const items = this.buildFileItems(unloading);
+		this.fileItemsCache = items;
+		this.fileItemsCacheBuiltVersion = this.fileItemsCacheVersion;
+		return items;
+	}
+
+
+	/**
+	 * Invalidate file items cache (call when vault changes).
+	 */
+	invalidateFileItemsCache(): void {
+		this.fileItemsCacheVersion++;
+	}
+
+
+	private buildFileItems(unloading?: boolean): FileItem[] {
 		const tFiles = this.app.vault.getAllLoadedFiles();
 		const rootFolder = tFiles.find(tFile => tFile.path === '/');
 		if (rootFolder) tFiles.remove(rootFolder);
 		return tFiles.map(tFile => this.defineFileItem(tFile, tFile.path, unloading));
 	}
+
 
 	/**
 	 * Get file definition.
@@ -1071,27 +1131,95 @@ export default class IconicPlugin extends Plugin {
 
 	/**
 	 * Get array of tag definitions.
+	 * Uses cache with event-based invalidation and version tracking.
 	 */
 	getTagItems(unloading?: boolean): TagItem[] {
-		// @ts-expect-error (Private API)
-		const tagHashes: string[] = Object.keys(this.app.metadataCache.getTags()) ?? [];
-		const tagBases = tagHashes.map(tagHash => {
-			return {
+		if (unloading) {
+			return this.buildTagItems(true);
+		}
+
+		// Check if cache is still valid
+		if (this.tagItemsCacheBuiltVersion === this.tagItemsCacheVersion && this.tagItemsCache) {
+			return this.tagItemsCache;
+		}
+
+		const metadataCache = this.app.metadataCache as MetadataCache & {
+			getTags(): Record<string, number>;
+		};
+
+		const allTags = metadataCache.getTags?.() ?? {};
+		const tagIds = Object.keys(allTags);
+
+		const items = this.buildTagItems(false, tagIds);
+
+		this.tagItemsCache = items;
+		this.tagItemsCacheBuiltVersion = this.tagItemsCacheVersion;
+
+		return items;
+	}
+
+	/**
+	 * Invalidate tag items cache (debounced to handle rapid metadata changes).
+	 * @param immediate If true, invalidate immediately instead of debouncing.
+	 */
+	invalidateTagItemsCache(immediate?: boolean): void {
+		if (this.tagInvalidateTimer !== null) {
+			window.clearTimeout(this.tagInvalidateTimer);
+			this.tagInvalidateTimer = null;
+		}
+
+		const invalidate = () => {
+			this.tagItemsCacheVersion++;
+			this.cachedTagIds = null;
+		};
+
+		if (immediate) {
+			invalidate();
+		} else {
+			this.tagInvalidateTimer = window.setTimeout(invalidate, 100);
+		}
+	}
+
+
+	/**
+	 * Build tag items array from metadata cache.
+	 */
+	private buildTagItems(unloading?: boolean, tagHashes?: string[]): TagItem[] {
+		if (!tagHashes) {
+			// Use cached tag IDs if available
+			if (this.cachedTagIds) {
+				tagHashes = this.cachedTagIds;
+			} else {
+				const metadataCache = this.app.metadataCache as MetadataCache & {
+					getTags(): Record<string, number>;
+				};
+				const allTags = metadataCache.getTags() ?? {};
+				tagHashes = Object.keys(allTags);
+				this.cachedTagIds = tagHashes;
+			}
+		}
+
+		// Single-pass: combine map operations
+		return tagHashes.map(tagHash => {
+			const tagBase = {
 				id: tagHash.replace('#', ''),
 				name: tagHash,
-			}
+			};
+			return this.defineTagItem(tagBase, unloading);
 		});
-		return tagBases.map(tagBase => this.defineTagItem(tagBase, unloading));
 	}
+
 
 	/**
 	 * Get tag definition.
 	 */
 	getTagItem(tagId: string, unloading?: boolean): TagItem | null {
 		const tagHash = '#' + tagId;
-		// @ts-expect-error (Private API)
-		const tagHashes: string[] = Object.keys(this.app.metadataCache.getTags()) ?? [];
-		return tagHashes.includes(tagHash)
+		const metadataCache = this.app.metadataCache as MetadataCache & {
+			getTags(): Record<string, number>;
+		};
+		const allTags = metadataCache.getTags() ?? {};
+		return allTags[tagHash] !== undefined
 			? this.defineTagItem({
 				id: tagId,
 				name: tagHash,
@@ -1210,6 +1338,7 @@ export default class IconicPlugin extends Plugin {
 	 * Save file icon changes to settings.
 	 */
 	saveFileIcon(file: FileItem, icon: string | null, color: string | null): void {
+		this.invalidateFileItemsCache();
 		const triggers: Set<RuleTrigger> = new Set();
 		const fileBase = this.settings.fileIcons[file.id];
 		if (icon !== fileBase?.icon) triggers.add('icon');
@@ -1225,6 +1354,7 @@ export default class IconicPlugin extends Plugin {
 	 * @param color If undefined, leave colors unchanged
 	 */
 	saveFileIcons(files: FileItem[], icon: string | null | undefined, color: string | null | undefined): void {
+		this.invalidateFileItemsCache();
 		const triggers: Set<RuleTrigger> = new Set();
 		for (const file of files) {
 			if (icon !== undefined) file.icon = icon;
@@ -1242,6 +1372,7 @@ export default class IconicPlugin extends Plugin {
 	 * Save bookmark icon changes to settings.
 	 */
 	saveBookmarkIcon(bmark: BookmarkItem, icon: string | null, color: string | null): void {
+		this.invalidateFileItemsCache();
 		const triggers: Set<RuleTrigger> = new Set();
 		switch (bmark.category) {
 			case 'file': // Fallthrough
@@ -1265,6 +1396,7 @@ export default class IconicPlugin extends Plugin {
 	 * @param color If undefined, leave colors unchanged
 	 */
 	saveBookmarkIcons(bmarks: BookmarkItem[], icon: string | null | undefined, color: string | null | undefined): void {
+		this.invalidateFileItemsCache();
 		const triggers: Set<RuleTrigger> = new Set();
 		for (const bmark of bmarks) {
 			if (icon !== undefined) bmark.icon = icon;
@@ -1290,6 +1422,7 @@ export default class IconicPlugin extends Plugin {
 	 * Save tag icon changes to settings.
 	 */
 	saveTagIcon(tag: TagItem, icon: string | null, color: string | null): void {
+		this.invalidateTagItemsCache(true);
 		this.updateIconSetting(this.settings.tagIcons, tag.id, icon, color);
 		this.saveSettings();
 	}
@@ -1558,6 +1691,12 @@ export default class IconicPlugin extends Plugin {
 	 * @override
 	 */
 	onunload(): void {
+		// Clear any pending timers
+		if (this.tagInvalidateTimer !== null) {
+			window.clearTimeout(this.tagInvalidateTimer);
+			this.tagInvalidateTimer = null;
+		}
+
 		this.menuManager.unload();
 		this.ruleManager.unload();
 		this.appIconManager?.unload();
