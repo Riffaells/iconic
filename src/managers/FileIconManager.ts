@@ -9,9 +9,6 @@ import IconPicker from 'src/dialogs/IconPicker';
  */
 export default class FileIconManager extends IconManager {
 	private containerEl: HTMLElement;
-	/**
-	 * Tracks pending refresh operations to prevent multiple rapid refreshes when expanding folders.
-	 */
 	private refreshTimerId: number;
 
 	constructor(plugin: IconicPlugin) {
@@ -48,11 +45,11 @@ export default class FileIconManager extends IconManager {
 		}, mutations => {
 			for (const mutation of mutations) {
 				if (mutation.attributeName === 'data-path') {
-					this.refreshIcons();
+					this.debouncedRefreshIcons();
 					return;
 				} else for (const addedNode of mutation.addedNodes) {
 					if (addedNode instanceof HTMLElement && addedNode.hasClass('tree-item')) {
-						this.refreshIcons();
+						this.debouncedRefreshIcons();
 						return;
 					}
 				}
@@ -97,7 +94,6 @@ export default class FileIconManager extends IconManager {
 				// 1. Only refresh children on expand (not collapse) to reduce unnecessary updates
 				// 2. Use debouncing to prevent multiple rapid refreshes
 				this.setMutationsObserver(itemEl, {
-					subtree: true,
 					attributeFilter: ['class', 'data-path'],
 					attributeOldValue: true,
 				}, mutations => {
@@ -207,6 +203,14 @@ export default class FileIconManager extends IconManager {
 	}
 
 	/**
+	 * Debounced version of refreshIcons to batch rapid container mutations.
+	 */
+	private debouncedRefreshIcons(): void {
+		window.clearTimeout(this.refreshTimerId);
+		this.refreshTimerId = window.setTimeout(() => {
+			this.refreshIcons();
+		}, 50);
+	}	/**
 	 * When user context-clicks a file, or opens a file pane menu, add custom items to the menu.
 	 */
 	private onContextMenu(...fileIds: string[]): void {
