@@ -1,5 +1,6 @@
 import { TFile } from 'obsidian';
 import IconicPlugin, { Category, Item, FileItem, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin';
+import { LRUCache } from 'src/utils/LRUCache';
 
 const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
@@ -279,19 +280,38 @@ export default class RuleManager {
 	/**
 	 * Check the ruling for a given item.
 	 */
+	private rulingCache = new LRUCache<string, RuleItem | null>(1000);
+	private cacheVersion = 0;
+
 	checkRuling(page: Category, itemId: string, unloading?: boolean): RuleItem | null {
 		if (unloading) return null;
-		switch (page) {
-			case 'file': return this.fileRulings.get(itemId) ?? null;
-			case 'folder': return this.folderRulings.get(itemId) ?? null;
-			default: return null;
+		
+		const cacheKey = `${page}:${itemId}:${this.cacheVersion}`;
+		const cached = this.rulingCache.get(cacheKey);
+		if (cached !== undefined) {
+			return cached;
 		}
+		
+		let result: RuleItem | null = null;
+		switch (page) {
+			case 'file': result = this.fileRulings.get(itemId) ?? null; break;
+			case 'folder': result = this.folderRulings.get(itemId) ?? null; break;
+			default: result = null;
+		}
+		
+		this.rulingCache.set(cacheKey, result);
+		return result;
 	}
 
 	/**
 	 * Update rulings for a given page, and return true if this changes any rulings.
 	 */
 	updateRulings(page: Category): boolean {
+		// Invalidate cache when rulings are updated
+		this.cacheVersion++;
+		// LRU cache automatically handles size, just clear old version entries
+		this.rulingCache.clear();
+		
 		const now = new Date(); // Use this timestamp to check any chronological conditions
 		const enabledRules = this.getRules(page).filter(rule => rule.enabled);
 
@@ -318,15 +338,27 @@ export default class RuleManager {
 
 		switch (page) {
 			case 'file': {
-				const files = this.plugin.getFileItems().filter(file => !file.items);
+				// Get all items once and separate files/folders
+				const allItems = this.plugin.getFileItems();
+				const files: FileItem[] = [];
+				const existingIds = new Set<string>();
+				
+				// Single pass to filter and build Set
+				for (const item of allItems) {
+					if (!item.items) {
+						files.push(item);
+						existingIds.add(item.id);
+					}
+				}
+				
 				// Prune file rulings (remove files that no longer exist)
-				const existingIds = files.map(file => file.id);
 				for (const [fileId] of this.fileRulings) {
-					if (!existingIds.contains(fileId)) {
+					if (!existingIds.has(fileId)) {
 						this.fileRulings.delete(fileId);
 						anyRulingsChanged = true;
 					}
 				}
+				
 				// Update file rulings
 				for (const file of files) {
 					// Judge whether a rule matches this file
@@ -357,11 +389,22 @@ export default class RuleManager {
 				break;
 			}
 			case 'folder': {
-				const folders = this.plugin.getFileItems().filter(folder => folder.items);
+				// Get all items once and separate files/folders
+				const allItems = this.plugin.getFileItems();
+				const folders: FileItem[] = [];
+				const folderIds = new Set<string>();
+				
+				// Single pass to filter and build Set
+				for (const item of allItems) {
+					if (item.items) {
+						folders.push(item);
+						folderIds.add(item.id);
+					}
+				}
+				
 				// Prune folder rulings (remove folders that no longer exist)
-				const folderIds = folders.map(folder => folder.id);
 				for (const [folderId] of this.folderRulings) {
-					if (!folderIds.contains(folderId)) {
+					if (!folderIds.has(folderId)) {
 						this.folderRulings.delete(folderId);
 						anyRulingsChanged = true;
 					}
@@ -523,44 +566,67 @@ export default class RuleManager {
 	 * @param ignoreEnabled Ignore whether the rule is enabled.
 	 */
 	judgeFiles(rule: RuleItem, now: Date, ignoreEnabled?: true): FileItem[] {
-		const files = this.plugin.getFileItems().filter(file => !file.items);
-		const matches: FileItem[] = [];
-		for (const file of files) {
-			if (this.judgeFile(file, rule, now, ignoreEnabled)) {
-				matches.push(file);
+			const allItems = this.plugin.getFileItems();
+			const matches: FileItem[] = [];
+			for (const item of allItems) {
+				if (!item.items && this.judgeFile(item, rule, now, ignoreEnabled)) {
+					matches.push(item);
+				}
 			}
+			return matches;
 		}
-		return matches;
-	}
+
 
 	/**
 	 * Judge how many folders match a given rule.
 	 * @param ignoreEnabled Ignore whether the rule is enabled.
 	 */
 	judgeFolders(rule: RuleItem, now: Date, ignoreEnabled?: true): FileItem[] {
-		const folders = this.plugin.getFileItems().filter(file => file.items);
-		const matches: FileItem[] = [];
-		for (const folder of folders) {
-			if (this.judgeFile(folder, rule, now, ignoreEnabled)) {
-				matches.push(folder);
+			const allItems = this.plugin.getFileItems();
+			const matches: FileItem[] = [];
+			for (const item of allItems) {
+				if (item.items && this.judgeFile(item, rule, now, ignoreEnabled)) {
+					matches.push(item);
+				}
 			}
+			return matches;
 		}
-		return matches;
-	}
+
 
 	/**
 	 * Judge whether a given file matches a given rule.
 	 * @param ignoreEnabled Ignore whether the rule is enabled.
 	 */
+	private metadataCache = new LRUCache<string, any>(200);
+	private pathCache = new LRUCache<string, ReturnType<IconicPlugin['splitFilePath']>>(500);
+
 	judgeFile(file: FileItem, rule: RuleItem, now: Date, ignoreEnabled?: true): boolean {
 		if (!file.id || rule.conditions.length === 0) return false;
 		if (!rule.enabled && !ignoreEnabled) return false;
-		const { basename, filename, extension, path, tree } = this.plugin.splitFilePath(file.id);
+		
+		// Cache path splitting with LRU
+		let pathData = this.pathCache.get(file.id);
+		if (pathData === undefined) {
+			pathData = this.plugin.splitFilePath(file.id);
+			this.pathCache.set(file.id, pathData);
+		}
+		const { basename, filename, extension, path, tree } = pathData;
+		
 		const tAbstractFile = this.plugin.app.vault.getAbstractFileByPath(path);
 		if (!tAbstractFile) return false;
-		const metadata = tAbstractFile instanceof TFile
-			? this.plugin.app.metadataCache.getFileCache(tAbstractFile)
-			: null;
+		
+		// Cache metadata lookups with LRU
+		let metadata = null;
+		if (tAbstractFile instanceof TFile) {
+			const cacheKey = `${path}:${tAbstractFile.stat.mtime}`;
+			const cached = this.metadataCache.get(cacheKey);
+			if (cached !== undefined) {
+				metadata = cached;
+			} else {
+				metadata = this.plugin.app.metadataCache.getFileCache(tAbstractFile);
+				this.metadataCache.set(cacheKey, metadata);
+			}
+		}
 
 		for (const condition of rule.conditions) {
 			let isConditionMatched = false;
@@ -575,7 +641,7 @@ export default class RuleManager {
 				if (metadata?.frontmatter) {
 					const fmProps = Object.entries(metadata.frontmatter);
 					const fmProp = fmProps.find(([fmPropId]) => fmPropId.toLowerCase() === propId.toLowerCase());
-					if (Array.isArray(fmProp)) source = fmProp[1];
+					if (Array.isArray(fmProp) && fmProp.length > 1) source = fmProp[1] as any;
 				}
 			} else switch (condition.source) {
 				case 'icon': {
@@ -594,13 +660,13 @@ export default class RuleManager {
 				case 'extension': source = extension; break;
 				case 'tree': source = tree; break;
 				case 'path': source = path; break;
-				case 'headings': source = metadata?.headings?.map(heading => heading.heading) ?? []; break;
-				case 'links': source = metadata?.links?.map(link => link.link) ?? []; break;
-				case 'embeds': source = metadata?.embeds?.map(embed => embed.link) ?? []; break;
+				case 'headings': source = metadata?.headings?.map((heading: any) => heading.heading) ?? []; break;
+				case 'links': source = metadata?.links?.map((link: any) => link.link) ?? []; break;
+				case 'embeds': source = metadata?.embeds?.map((embed: any) => embed.link) ?? []; break;
 				case 'tags': {
 					source = [];
 					const propTags = metadata?.frontmatter?.tags ?? [];
-					const inlineTags = metadata?.tags?.map(tag => tag.tag.replace('#', '')) ?? [];
+					const inlineTags = metadata?.tags?.map((tag: any) => tag.tag.replace('#', '')) ?? [];
 					for (const tag of [...propTags, ...inlineTags]) {
 						if (!source.includes(tag)) source.push(tag);
 					}
@@ -611,10 +677,32 @@ export default class RuleManager {
 				case 'clock': source = now.getTime(); break;
 			}
 
-			// Prepare case-insensitive strings
-			const sourceLower = String.isString(source) ? source.toLowerCase() : '';
-			const sourceLowers = Array.isArray(source) ? source.map(item => String(item).toLowerCase()) : [];
-			const valueLower = String.isString(value) ? value.toLowerCase() : '';
+			// Prepare case-insensitive strings (only when needed)
+			let sourceLower = '';
+			let sourceLowers: string[] = [];
+			let valueLower = '';
+			
+			// Only compute lowercase versions if operator requires it
+			const needsLowerCase = operator === 'is' || operator === 'contains' || operator === 'startsWith' || 
+				operator === 'endsWith' || operator === 'includes' || operator === 'allAre' || 
+				operator === 'allContain' || operator === 'allStartWith' || operator === 'allEndWith' ||
+				operator === 'anyContain' || operator === 'anyStartWith' || operator === 'anyEndWith' ||
+				operator === 'noneContain' || operator === 'noneStartWith' || operator === 'noneEndWith' ||
+				operator === 'iconIs' || operator === 'nameIs' || operator === 'nameContains' ||
+				operator === 'nameStartsWith' || operator === 'nameEndsWith' || operator === 'colorIs' ||
+				operator === 'hexIs';
+			
+			if (needsLowerCase) {
+				if (String.isString(source)) {
+					sourceLower = source.toLowerCase();
+				}
+				if (Array.isArray(source)) {
+					sourceLowers = source.map(item => String(item).toLowerCase());
+				}
+				if (String.isString(value)) {
+					valueLower = value.toLowerCase();
+				}
+			}
 
 			// Check if condition is true
 			if (operator === 'hasValue') {
@@ -755,11 +843,22 @@ export default class RuleManager {
 
 	/**
 	 * Remove forwardslash delimiters from regex if present.
+	 * Cached to avoid recompiling same patterns.
 	 */
+	private static regexCache = new LRUCache<string, RegExp>(50);
+	
 	private static unwrapRegex(value: string): RegExp {
-		return value.startsWith('/') && value.endsWith('/')
+		const cached = this.regexCache.get(value);
+		if (cached !== undefined) {
+			return cached;
+		}
+		
+		const regex = value.startsWith('/') && value.endsWith('/')
 			? new RegExp(value.slice(1, -1))
 			: new RegExp(value);
+		
+		this.regexCache.set(value, regex);
+		return regex;
 	}
 
 	/**

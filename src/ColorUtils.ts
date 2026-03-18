@@ -1,4 +1,5 @@
 import { RGB } from 'obsidian';
+import { LRUCache } from './utils/LRUCache';
 
 /**
  * 9 basic colors and their Obsidian CSS variables.
@@ -180,12 +181,19 @@ const REGEX_COLOR_MIX = /color-mix\(in srgb, rgba?\((\d+), (\d+), (\d+)(?:, ([\d
  */
 export default class ColorUtils {
 	private static readonly convertEl = document.createElement('div');
+	private static readonly rgbCache = new LRUCache<string, string>(100);
 
 	/**
 	 * Convert color into rgb/rgba() string.
 	 * @param color a color name, or a specific CSS color
 	 */
 	static toRgb(color: string | null | undefined): string {
+		const cacheKey = color ?? 'null';
+		const cached = this.rgbCache.get(cacheKey);
+		if (cached !== undefined) {
+			return cached;
+		}
+		
 		let cssVar = '--icon-color';
 		let cssColor = RGB_FALLBACK;
 		if (!color) {
@@ -198,6 +206,7 @@ export default class ColorUtils {
 		} else if (CSS.supports('color', color)) {
 			cssColor = color;
 		} else {
+			this.rgbCache.set(cacheKey, RGB_FALLBACK);
 			return RGB_FALLBACK;
 		}
 
@@ -206,13 +215,18 @@ export default class ColorUtils {
 		const rgbValue = this.convertEl.style.color;
 
 		// Value might still be wrapped in color-mix()
+		let result: string;
 		if (rgbValue.startsWith('color-mix')) {
-			return this.mixToRgb(rgbValue);
+			result = this.mixToRgb(rgbValue);
 		} else if (rgbValue.startsWith('rgb')) {
-			return rgbValue;
+			result = rgbValue;
 		} else {
-			return RGB_FALLBACK;
+			result = RGB_FALLBACK;
 		}
+		
+		// Cache the result (LRU automatically handles eviction)
+		this.rgbCache.set(cacheKey, result);
+		return result;
 	}
 
 	/**
