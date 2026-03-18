@@ -4,6 +4,7 @@ import { RuleItem } from 'src/managers/RuleManager';
 import IconManager from 'src/managers/IconManager';
 import RuleEditor from 'src/dialogs/RuleEditor';
 import IconPicker from 'src/dialogs/IconPicker';
+import { Debouncer } from 'src/utils/Debouncer';
 
 /**
  * Handles icons in the Bookmarks pane.
@@ -12,6 +13,7 @@ export default class BookmarkIconManager extends IconManager {
 	private containerEl: HTMLElement;
 	private isTouchActive = false;
 	private readonly selectionLookup = new Map<HTMLElement, BookmarkItem>();
+	private debouncer = new Debouncer();
 
 	constructor(plugin: IconicPlugin) {
 		super(plugin);
@@ -22,10 +24,10 @@ export default class BookmarkIconManager extends IconManager {
 				this.app.workspace.iterateAllLeaves(leaf => this.manageLeaf(leaf));
 			}
 		}));
-		// Compatibility with Iconize plugin
+		// Compatibility with Iconize plugin (debounced to not block)
 		if (this.plugin.isPluginEnabled('obsidian-icon-folder')) {
 			this.plugin.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-				this.refreshIcons();
+				this.debouncer.debounce('leaf-change', () => this.refreshIcons(), 100);
 			}));
 		}
 		this.app.workspace.iterateAllLeaves(leaf => this.manageLeaf(leaf));
@@ -282,6 +284,7 @@ export default class BookmarkIconManager extends IconManager {
 	 * @override
 	 */
 	unload(): void {
+		this.debouncer.cancelAll();
 		this.refreshIcons(true);
 		super.unload();
 	}

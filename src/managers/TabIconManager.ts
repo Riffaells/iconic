@@ -3,15 +3,38 @@ import IconicPlugin, { Category, FileItem, TabItem, STRINGS } from 'src/IconicPl
 import IconManager from 'src/managers/IconManager';
 import RuleEditor from 'src/dialogs/RuleEditor';
 import IconPicker from 'src/dialogs/IconPicker';
+import { Debouncer } from 'src/utils/Debouncer';
 
 /**
  * Handles icons in workspace tab headers.
  */
 export default class TabIconManager extends IconManager {
+	private debouncer = new Debouncer();
+	private lastRefreshTime = 0;
+	private readonly MIN_REFRESH_INTERVAL = 100; // Minimum time between refreshes
+
 	constructor(plugin: IconicPlugin) {
 		super(plugin);
-		this.plugin.registerEvent(this.app.workspace.on('layout-change', () => this.refreshIcons()));
-		this.plugin.registerEvent(this.app.workspace.on('active-leaf-change', () => this.refreshIcons()));
+		
+		// Debounce layout and leaf changes to avoid excessive refreshes
+		// Use longer delays and check if refresh is actually needed
+		this.plugin.registerEvent(this.app.workspace.on('layout-change', () => {
+			this.debouncer.debounce('layout-change', () => {
+				// Only refresh if enough time has passed
+				const now = Date.now();
+				if (now - this.lastRefreshTime >= this.MIN_REFRESH_INTERVAL) {
+					this.lastRefreshTime = now;
+					this.refreshIcons();
+				}
+			}, 150); // Increased from 100ms
+		}));
+		
+		this.plugin.registerEvent(this.app.workspace.on('active-leaf-change', () => {
+			// For leaf changes, only update the active tab icon, not all tabs
+			this.debouncer.debounce('leaf-change', () => {
+				this.refreshActiveTabOnly();
+			}, 50);
+		}));
 
 		// Refresh icons in tab selector dropdown ▼
 		const tabListEl = activeDocument.body.find('.mod-root .workspace-tab-header-tab-list > .clickable-icon');
@@ -44,101 +67,126 @@ export default class TabIconManager extends IconManager {
 		const tabs = this.plugin.getTabItems(unloading);
 
 		for (const tab of tabs) {
-			const tabEl = tab.tabEl;
-			const iconEl = tab.iconEl;
-			if (!tabEl || !iconEl || tab.id === 'webviewer') continue;
+			this.refreshSingleTab(tab, unloading);
+		}
+	}
 
-			// Check for an icon ruling
-			const rule = tab.category === 'file'
-				? this.plugin.ruleManager.checkRuling('file', tab.id, unloading) ?? tab
-				: tab;
+	/**
+	 * Refresh only the active tab icon (faster than refreshing all).
+	 */
+	private refreshActiveTabOnly(): void {
+		const activeLeaf = this.app.workspace.activeLeaf;
+		if (!activeLeaf) return;
 
-			if (tab.isRoot && this.plugin.isSettingEnabled('clickableIcons')) {
-				if (tab.category === 'file') {
-					const file = this.plugin.getFileItem(tab.id);
-					this.refreshIcon(rule, iconEl, event => {
-						IconPicker.openSingle(this.plugin, file, (newIcon, newColor) => {
-							this.plugin.saveFileIcon(file, newIcon, newColor);
-							this.plugin.refreshManagers('file');
-						});
-						event.stopPropagation();
+		const tabs = this.plugin.getTabItems();
+		const activeTab = tabs.find(tab => tab.isActive);
+		if (activeTab) {
+			this.refreshSingleTab(activeTab, false);
+		}
+	}
+
+	/**
+	 * Refresh a single tab icon.
+	 */
+	private refreshSingleTab(tab: TabItem, unloading?: boolean): void {
+		const tabEl = tab.tabEl;
+		const iconEl = tab.iconEl;
+		if (!tabEl || !iconEl || tab.id === 'webviewer') return;
+
+		// Check for an icon ruling
+		const rule = tab.category === 'file'
+			? this.plugin.ruleManager.checkRuling('file', tab.id, unloading) ?? tab
+			: tab;
+
+		if (tab.isRoot && this.plugin.isSettingEnabled('clickableIcons')) {
+			if (tab.category === 'file') {
+				const file = this.plugin.getFileItem(tab.id);
+				this.refreshIcon(rule, iconEl, event => {
+					IconPicker.openSingle(this.plugin, file, (newIcon, newColor) => {
+						this.plugin.saveFileIcon(file, newIcon, newColor);
+						this.plugin.refreshManagers('file');
+					});
+					event.stopPropagation();
+				});
+			} else {
+				this.refreshIcon(rule, iconEl, event => {
+					IconPicker.openSingle(this.plugin, tab, (newIcon, newColor) => {
+						this.plugin.saveTabIcon(tab, newIcon, newColor);
+						this.plugin.refreshManagers('tab');
+					});
+					event.stopPropagation();
+				});
+			}
+		} else {
+			this.refreshIcon(rule, iconEl);
+		}
+
+		// Update ghost icon when dragging
+		this.setEventListener(tabEl, 'dragstart', () => {
+			if (rule.icon || rule.iconDefault) {
+				const ghostEl = tabEl.doc.body.find(':scope > .drag-ghost > .drag-ghost-icon');
+				if (ghostEl) {
+					this.refreshIcon({ icon: rule.icon ?? rule.iconDefault, color: rule.color }, ghostEl);
+				}
+			}
+		});
+
+		// Skip menu listener if tab is handled by workspace.on('file-menu')
+		if (!this.plugin.settings.showMenuActions || tab.category === 'file' && (tab.isActive || tab.isStacked)) {
+			this.stopEventListener(tabEl, 'contextmenu');
+		} else {
+			this.setEventListener(tabEl, 'contextmenu', () => this.onContextMenu(tab.id, tab.category));
+		}
+
+		// Refresh when tab is pinned/unpinned (throttled)
+		const statusEl = tabEl.find(':scope > .workspace-tab-header-inner > .workspace-tab-header-status-container');
+		this.setMutationObserver(statusEl, { childList: true }, mutation => {
+			for (const addedNode of mutation.addedNodes) {
+				if (addedNode instanceof HTMLElement && addedNode.hasClass('mod-pinned')) {
+					this.debouncer.debounce('pin-change', () => this.refreshIcons(), 100);
+					return;
+				}
+			}
+			for (const removedNode of mutation.removedNodes) {
+				if (removedNode instanceof HTMLElement && removedNode.hasClass('mod-pinned')) {
+					this.debouncer.debounce('pin-change', () => this.refreshIcons(), 100);
+					return;
+				}
+			}
+		});
+
+		// Update mobile sidebars (throttled)
+		if (Platform.isMobile) {
+			// @ts-expect-error (Private API)
+			this.setEventListener(this.app.workspace.leftSplit.activeTabSelectEl, 'change', () => {
+				this.debouncer.debounce('mobile-left', () => this.refreshIcons(), 100);
+			});
+			// @ts-expect-error (Private API)
+			this.setEventListener(this.app.workspace.rightSplit.activeTabSelectEl, 'change', () => {
+				this.debouncer.debounce('mobile-right', () => this.refreshIcons(), 100);
+			});
+
+			// @ts-expect-error (Private API)
+			if (this.app.workspace.leftSplit.activeTabIconEl === iconEl) {
+				// @ts-expect-error (Private API)
+				const leftActiveTabEl = this.app.workspace.leftSplit.activeTabHeaderEl;
+				if (this.plugin.settings.showMenuActions) {
+					this.setEventListener(leftActiveTabEl, 'contextmenu', () => {
+						this.onContextMenu(tab.id, tab.category);
 					});
 				} else {
-					this.refreshIcon(rule, iconEl, event => {
-						IconPicker.openSingle(this.plugin, tab, (newIcon, newColor) => {
-							this.plugin.saveTabIcon(tab, newIcon, newColor);
-							this.plugin.refreshManagers('tab');
-						});
-						event.stopPropagation();
+					this.stopEventListener(leftActiveTabEl, 'contextmenu');
+				}
+				// @ts-expect-error (Private API)
+			} else if (this.app.workspace.rightSplit.activeTabIconEl === iconEl) {
+				// @ts-expect-error (Private API)
+				const rightActiveTabEl = this.app.workspace.rightSplit.activeTabHeaderEl;
+				if (this.plugin.settings.showMenuActions) {
+					this.setEventListener(rightActiveTabEl, 'contextmenu', () => {
+						this.onContextMenu(tab.id, tab.category);
 					});
-				}
-			} else {
-				this.refreshIcon(rule, iconEl);
-			}
-
-			// Update ghost icon when dragging
-			this.setEventListener(tabEl, 'dragstart', () => {
-				if (rule.icon || rule.iconDefault) {
-					const ghostEl = tabEl.doc.body.find(':scope > .drag-ghost > .drag-ghost-icon');
-					if (ghostEl) {
-						this.refreshIcon({ icon: rule.icon ?? rule.iconDefault, color: rule.color }, ghostEl);
-					}
-				}
-			});
-
-			// Skip menu listener if tab is handled by workspace.on('file-menu')
-			if (!this.plugin.settings.showMenuActions || tab.category === 'file' && (tab.isActive || tab.isStacked)) {
-				this.stopEventListener(tabEl, 'contextmenu');
-			} else {
-				this.setEventListener(tabEl, 'contextmenu', () => this.onContextMenu(tab.id, tab.category));
-			}
-
-			// Refresh when tab is pinned/unpinned
-			const statusEl = tabEl.find(':scope > .workspace-tab-header-inner > .workspace-tab-header-status-container');
-			this.setMutationObserver(statusEl, { childList: true }, mutation => {
-				for (const addedNode of mutation.addedNodes) {
-					if (addedNode instanceof HTMLElement && addedNode.hasClass('mod-pinned')) {
-						this.refreshIcons();
-						return;
-					}
-				}
-				for (const removedNode of mutation.removedNodes) {
-					if (removedNode instanceof HTMLElement && removedNode.hasClass('mod-pinned')) {
-						this.refreshIcons();
-						return;
-					}
-				}
-			});
-
-			// Update mobile sidebars
-			if (Platform.isMobile) {
-				// @ts-expect-error (Private API)
-				this.setEventListener(this.app.workspace.leftSplit.activeTabSelectEl, 'change', () => this.refreshIcons());
-				// @ts-expect-error (Private API)
-				this.setEventListener(this.app.workspace.rightSplit.activeTabSelectEl, 'change', () => this.refreshIcons());
-
-				// @ts-expect-error (Private API)
-				if (this.app.workspace.leftSplit.activeTabIconEl === iconEl) {
-					// @ts-expect-error (Private API)
-					const leftActiveTabEl = this.app.workspace.leftSplit.activeTabHeaderEl;
-					if (this.plugin.settings.showMenuActions) {
-						this.setEventListener(leftActiveTabEl, 'contextmenu', () => {
-							this.onContextMenu(tab.id, tab.category);
-						});
-					} else {
-						this.stopEventListener(leftActiveTabEl, 'contextmenu');
-					}
-					// @ts-expect-error (Private API)
-				} else if (this.app.workspace.rightSplit.activeTabIconEl === iconEl) {
-					// @ts-expect-error (Private API)
-					const rightActiveTabEl = this.app.workspace.rightSplit.activeTabHeaderEl;
-					if (this.plugin.settings.showMenuActions) {
-						this.setEventListener(rightActiveTabEl, 'contextmenu', () => {
-							this.onContextMenu(tab.id, tab.category);
-						});
-					} else {
-						this.stopEventListener(rightActiveTabEl, 'contextmenu');
-					}
+				} else {
+					this.stopEventListener(rightActiveTabEl, 'contextmenu');
 				}
 			}
 		}
@@ -242,6 +290,7 @@ export default class TabIconManager extends IconManager {
 	 * @override
 	 */
 	unload(): void {
+		this.debouncer.cancelAll();
 		this.refreshIcons(true);
 		super.unload();
 	}
