@@ -302,7 +302,7 @@ export default class IconicSettingTab extends PluginSettingTab {
 			})
 		);
 
-		// SETTING: Max search results
+		// SETTING: Maximum search results
 		groupIconPicker.addSetting(setting => setting
 			.setName(STRINGS.settings.maxSearchResults.name)
 			.setDesc(STRINGS.settings.maxSearchResults.desc)
@@ -445,27 +445,29 @@ export default class IconicSettingTab extends PluginSettingTab {
 			.then(setting => {
 				if (Platform.isDesktop) setting.addExtraButton(button => button
 					.setIcon('lucide-folder-open')
+					.setTooltip(STRINGS.settings.maxBackups.openPluginFolder)
 					// @ts-expect-error (Private API)
 					.onClick(() => this.app.openWithDefaultApp(this.plugin.manifest.dir ?? ''))
 				)
 			})
 			.addDropdown(dropdown => dropdown
-			.addOption('0', STRINGS.settings.values.none)
-			.addOption('1', '1')
-			.addOption('2', '2')
-			.addOption('3', '3')
-			.addOption('4', '4')
-			.addOption('5', '5')
-			.addOption('6', '6')
-			.addOption('7', '7')
-			.addOption('8', '8')
-			.addOption('9', '9')
-			.setValue(this.plugin.settings.maxBackups.toString())
-			.onChange(value => {
-				this.plugin.settings.maxBackups = Number(value) || 0;
-				this.plugin.saveSettings();
-			})
-		));
+				.addOption('0', STRINGS.settings.values.none)
+				.addOption('1', '1')
+				.addOption('2', '2')
+				.addOption('3', '3')
+				.addOption('4', '4')
+				.addOption('5', '5')
+				.addOption('6', '6')
+				.addOption('7', '7')
+				.addOption('8', '8')
+				.addOption('9', '9')
+				.setValue(this.plugin.settings.maxBackups.toString())
+				.onChange(value => {
+					this.plugin.settings.maxBackups = Number(value) || 0;
+					this.plugin.saveSettings();
+				})
+			)
+		);
 	}
 
 	/**

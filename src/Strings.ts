@@ -410,6 +410,7 @@ export default class Strings {
 		maxBackups: {
 			name: 'Maximum automatic backups',
 			desc: 'Choose how many backups to keep of your icon settings. Backups are spaced 3 hours apart.',
+			openPluginFolder: 'Open plugin folder',
 		},
 	};
 	static backups = {
