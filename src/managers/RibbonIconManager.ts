@@ -29,12 +29,12 @@ export default class RibbonIconManager extends IconManager {
 		if (ribbonEl) this.setEventListener(ribbonEl, 'contextmenu', () => {
 			const ribbonItems = this.plugin.getRibbonItems();
 			this.plugin.menuManager.forSection('order', item => {
-				const ribbonItem = ribbonItems[0];
+				const firstItem = ribbonItems.first();
 				// @ts-expect-error (Private API)
-				if (ribbonItem && item.iconEl.childElementCount > 0) { // Ribbon Divider compatibility
-					item.setIcon(ribbonItem.icon);
+				if (firstItem && item.iconEl.childElementCount > 0) { // Ribbon Divider compatibility
+					item.setIcon(firstItem.icon);
 					// @ts-expect-error (Private API)
-					this.refreshIcon(ribbonItem, item.iconEl);
+					this.refreshIcon(firstItem, item.iconEl);
 					ribbonItems.shift();
 				}
 			});
@@ -67,14 +67,14 @@ export default class RibbonIconManager extends IconManager {
 			// @ts-expect-error (Private API)
 			const quickItemId = this.app.vault.getConfig('mobileQuickRibbonItem');
 			const ribbonButtonListener = () => {
-				const ribbonItems = this.plugin.getRibbonItems().filter(item => !item.isHidden);
+				const firstRibItem = this.plugin.getRibbonItems().filter(item => !item.isHidden);
 				this.plugin.menuManager.forSection('', item => {
-					const ribbonItem = ribbonItems[0];
+					const ribbonItem = firstRibItem[0];
 					if (ribbonItem) {
 						item.setIcon(ribbonItem.icon);
 						// @ts-expect-error (Private API)
 						this.refreshIcon(ribbonItem, item.iconEl);
-						ribbonItems.shift();
+						firstRibItem.shift();
 					}
 				});
 			}

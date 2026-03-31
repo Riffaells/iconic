@@ -325,9 +325,13 @@ export default class IconicPlugin extends Plugin {
 				}
 			})
 			// Sort icon names alphabetically
-			.sort(([, aName], [, bName]) => aName.localeCompare(bName))
+			.sort(([, aName], [, bName]) => {
+				return (aName && bName) ? aName.localeCompare(bName) : 0;
+			})
 			// Populate ICONS map
-			.forEach(([id, name]) => ICONS.set(id, name));
+			.forEach(([id, name]) => {
+				if (id && name) ICONS.set(id, name);
+			});
 
 			this.startManagers();
 			this.refreshBody();
@@ -942,7 +946,7 @@ export default class IconicPlugin extends Plugin {
 		const subpath = subpathStart > -1 ? fileId.substring(subpathStart, fileId.length) : '';
 		const path = subpathStart > -1 ? fileId.substring(0, subpathStart) : fileId;
 
-		const [, tree = '', filename] = path.match(/^(.*\/)?(.*)$/s) ?? [];
+		const [, tree = '', filename = ''] = path.match(/^(.*\/)?(.*)$/s) ?? [];
 		const extensionStart = filename.lastIndexOf('.');
 		const extension = filename.substring(extensionStart > -1 ? extensionStart + 1 : filename.length) || '';
 		const basename = filename.substring(0, extensionStart > -1 ? extensionStart : filename.length) || '';

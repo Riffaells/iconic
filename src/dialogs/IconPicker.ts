@@ -106,8 +106,11 @@ export default class IconPicker extends Modal {
 		this.plugin = plugin;
 		this.iconManager = new IconPickerManager(plugin);
 		this.items = items;
-		this.icon = this.items.every(item => item.icon === this.items[0].icon) ? this.items[0].icon : undefined;
-		this.color = this.items.every(item => item.color === this.items[0].color) ? this.items[0].color : undefined;
+		const firstItem = this.items.first();
+		if (firstItem) {
+			this.icon = this.items.every(item => item.icon === firstItem.icon) ? firstItem.icon : undefined;
+			this.color = this.items.every(item => item.color === firstItem.color) ? firstItem.color : undefined;
+		}
 		this.callback = callback;
 		this.multiCallback = multiCallback;
 
@@ -190,10 +193,11 @@ export default class IconPicker extends Modal {
 			this.openColorMenu(x, y);
 		}
 		// Search field
-		else if (event.target === this.searchField.inputEl) {
-			if (event.key === 'Enter' && this.searchResults.length > 0) {
+		else if (event.target === this.searchField.inputEl && event.key === 'Enter') {
+			const [firstResultIcon] = this.searchResults.first() ?? [];
+			if (firstResultIcon) {
 				event.preventDefault();
-				this.closeAndSave(this.searchResults[0][0], this.color);
+				this.closeAndSave(firstResultIcon, this.color);
 			}
 		}
 	}
@@ -246,8 +250,9 @@ export default class IconPicker extends Modal {
 			const setting = new Setting(this.contentEl)
 				.addText(itemNameField => itemNameField.setValue(this.items.map(item => item.name).join(', ')))
 				.setDisabled(true);
-			const category = this.items.every(item => item.category === this.items[0].category)
-				? this.items[0].category
+			const firstItem = this.items.first();
+			const category = firstItem && this.items.every(item => item.category === firstItem.category)
+				? firstItem.category
 				: null;
 			if (this.items.length === 1) switch (category) {
 				default: setting.setName(STRINGS.categories.item); break;
@@ -723,9 +728,11 @@ export default class IconPicker extends Modal {
 				if (rule) break;
 			}
 		} else {
-			const item = this.items[0];
-			rule = this.plugin.ruleManager.checkRuling(item.category, item.id);
-			page = item.category;
+			const item = this.items.first();
+			if (item) {
+				rule = this.plugin.ruleManager.checkRuling(item.category, item.id);
+				page = item.category;
+			}
 		}
 
 		if (rule) {

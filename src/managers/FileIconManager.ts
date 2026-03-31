@@ -212,6 +212,7 @@ export default class FileIconManager extends IconManager {
 	private onContextMenu(...fileIds: string[]): void {
 		this.plugin.menuManager.closeAndFlush();
 		const files: FileItem[] = [];
+		const firstFile = files.first();
 		for (const fileId of fileIds) {
 			files.push(this.plugin.getFileItem(fileId));
 		}
@@ -225,9 +226,9 @@ export default class FileIconManager extends IconManager {
 			.setIcon('lucide-image-plus')
 			.setSection('icon')
 			.onClick(() => {
-				if (files.length === 1) {
-					IconPicker.openSingle(this.plugin, files[0], (newIcon, newColor) => {
-						this.plugin.saveFileIcon(files[0], newIcon, newColor);
+				if (files.length === 1 && firstFile) {
+					IconPicker.openSingle(this.plugin, firstFile, (newIcon, newColor) => {
+						this.plugin.saveFileIcon(firstFile, newIcon, newColor);
 						this.plugin.refreshManagers('file', 'folder');
 					});
 				} else {
@@ -242,13 +243,16 @@ export default class FileIconManager extends IconManager {
 		// Remove icon(s) / Reset color(s)
 		const anyIcons = files.some(file => file.icon);
 		const anyColors = files.some(file => file.color);
-		const removalTitle = files.length === 1
-			? files[0].icon
+		let removalTitle: string;
+		if (files.length === 1 && firstFile) {
+			removalTitle = firstFile.icon
 				? STRINGS.menu.removeIcon
 				: STRINGS.menu.resetColor
-			: anyIcons
+		} else {
+			removalTitle = anyIcons
 				? STRINGS.menu.removeIcons.replace('{#}', files.length.toString())
-				: STRINGS.menu.resetColors.replace('{#}', files.length.toString())
+				: STRINGS.menu.resetColors.replace('{#}', files.length.toString());
+		}
 		const removalIcon = anyIcons ? 'lucide-image-minus' : 'lucide-rotate-ccw';
 		if (anyIcons || anyColors) {
 			this.plugin.menuManager.addItem(item => item
@@ -256,8 +260,8 @@ export default class FileIconManager extends IconManager {
 				.setIcon(removalIcon)
 				.setSection('icon')
 				.onClick(() => {
-					if (files.length === 1) {
-						this.plugin.saveFileIcon(files[0], null, null);
+					if (files.length === 1 && firstFile) {
+						this.plugin.saveFileIcon(firstFile, null, null);
 					} else {
 						this.plugin.saveFileIcons(files, null, null);
 					}
@@ -267,9 +271,9 @@ export default class FileIconManager extends IconManager {
 		}
 
 		// Edit rule
-		if (files.length === 1) {
-			const page = files[0].items ? 'folder' : 'file';
-			const rule = this.plugin.ruleManager.checkRuling(page, files[0].id);
+		if (files.length === 1 && firstFile) {
+			const page = firstFile.items ? 'folder' : 'file';
+			const rule = this.plugin.ruleManager.checkRuling(page, firstFile.id);
 			if (rule) {
 				this.plugin.menuManager.addItem(item => { item
 					.setTitle(STRINGS.menu.editRule)

@@ -88,12 +88,12 @@ export default class ConditionSetting extends Setting {
 		this.gripEl.addEventListener('touchstart', event => {
 			event.preventDefault(); // Prevent dragstart
 			const touch = event.targetTouches[0];
-			this.dragStartCallback?.(touch.clientX, touch.clientY);
+			if (touch) this.dragStartCallback?.(touch.clientX, touch.clientY);
 		});
 		this.gripEl.addEventListener('touchmove', event => {
 			event.preventDefault(); // Prevent scrolling
 			const touch = event.targetTouches[0];
-			this.dragCallback?.(touch.clientX, touch.clientY);
+			if (touch) this.dragCallback?.(touch.clientX, touch.clientY);
 		});
 		this.gripEl.addEventListener('touchend', () => this.dragEndCallback?.());
 		this.gripEl.addEventListener('touchcancel', () => this.dragEndCallback?.());

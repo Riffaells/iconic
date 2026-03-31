@@ -100,9 +100,7 @@ export default class MenuManager {
 		if (this.menu) {
 			// @ts-expect-error (Private API)
 			const items = (this.menu.items as MenuItem[]).filter(item => item.section === section);
-			for (let i = 0; i < items.length; i++) {
-				callback(items[i], i);
-			}
+			items.forEach((item, i) => callback(item, i));
 		} else {
 			this.queuedActions.push(() => this.forSection(section, callback));
 		}

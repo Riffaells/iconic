@@ -713,8 +713,11 @@ export default class RuleEditor extends Modal {
 			if (propSources.includes(setting.condition.source)) {
 				setting.srcDropdown.setValue(setting.condition.source);
 			} else {
-				setting.condition.source = propSources[0];
-				setting.srcDropdown.setValue(propSources[0]);
+				const firstPropSource = propSources.first();
+				if (firstPropSource) {
+					setting.condition.source = firstPropSource;
+					setting.srcDropdown.setValue(firstPropSource);
+				}
 			}
 		} else {
 			// Get sources based on rule page
@@ -733,8 +736,11 @@ export default class RuleEditor extends Modal {
 			if (sources.includes(setting.condition.source)) {
 				setting.srcDropdown.setValue(setting.condition.source);
 			} else {
-				setting.condition.source = sources[0];
-				setting.srcDropdown.setValue(sources[0]);
+				const firstSource = sources.first();
+				if (firstSource) {
+					setting.condition.source = firstSource;
+					setting.srcDropdown.setValue(firstSource);
+				}
 			}
 		}
 	}
@@ -762,7 +768,7 @@ export default class RuleEditor extends Modal {
 				case 'tags': operators = LIST_OPERATORS; break;
 			}
 		} else {
-			operators = SOURCE_OPERATORS[setting.condition.source];
+			operators = SOURCE_OPERATORS[setting.condition.source] ?? [];
 		}
 
 		// Populate operator dropdown
@@ -776,8 +782,11 @@ export default class RuleEditor extends Modal {
 		if (operators.includes(setting.condition.operator)) {
 			setting.opDropdown.setValue(setting.condition.operator);
 		} else {
-			setting.condition.operator = operators[0];
-			setting.opDropdown.setValue(operators[0]);
+			const firstOperator = operators.first();
+			if (firstOperator) {
+				setting.condition.operator = firstOperator;
+				setting.opDropdown.setValue(firstOperator);
+			}
 		}
 
 		// If value type has changed, empty the condition value
@@ -872,7 +881,7 @@ export default class RuleEditor extends Modal {
 		if (dropdownValues && dropdownLabels) {
 			for (const value of dropdownValues) {
 				const label = dropdownLabels[value as keyof typeof dropdownLabels];
-				setting.valDropdown.addOption(value.toString(), label);
+				setting.valDropdown.addOption(value.toString(), label ?? '');
 			}
 			if (dropdownValues.includes(setting.condition.value)) {
 				setting.valDropdown.setValue(setting.condition.value);
@@ -886,8 +895,11 @@ export default class RuleEditor extends Modal {
 			if (dropdownValues.includes(setting.condition.value)) {
 				setting.valDropdown.setValue(setting.condition.value);
 			} else {
-				setting.condition.value = dropdownValues[0].toString();
-				setting.valDropdown.setValue(dropdownValues[0].toString());
+				const firstValue = dropdownValues.first();
+				if (firstValue) {
+					setting.condition.value = firstValue.toString();
+					setting.valDropdown.setValue(firstValue.toString());
+				}
 			}
 		} else {
 			// Remove element
@@ -973,18 +985,22 @@ export default class RuleEditor extends Modal {
 
 		// If ghost is dragged into condition above, swap the conditions
 		const prevCondEl = this.scrollerEl.children[index - 1];
-		const prevOverdrag = prevCondEl?.clientHeight * 0.25 || 0;
-		if (prevCondEl && y < prevCondEl.getBoundingClientRect().bottom - prevOverdrag) {
-			navigator.vibrate?.(100); // Not supported on iOS
-			prevCondEl.before(settingEl);
+		if (prevCondEl) {
+			const prevOverdrag = prevCondEl?.clientHeight * 0.25;
+			if (y < prevCondEl.getBoundingClientRect().bottom - prevOverdrag) {
+				navigator.vibrate?.(100); // Not supported on iOS
+				prevCondEl.before(settingEl);
+			}
 		}
 
 		// If ghost is dragged into condition below, swap the conditions
 		const nextCondEl = this.scrollerEl.children[index + 1];
-		const nextOverdrag = nextCondEl?.clientHeight * 0.25 || 0;
-		if (nextCondEl && y > nextCondEl.getBoundingClientRect().top + nextOverdrag) {
-			navigator.vibrate?.(100); // Not supported on iOS
-			nextCondEl.after(settingEl);
+		if (nextCondEl) {
+			const nextOverdrag = nextCondEl?.clientHeight * 0.25 || 0;
+			if (y > nextCondEl.getBoundingClientRect().top + nextOverdrag) {
+				navigator.vibrate?.(100); // Not supported on iOS
+				nextCondEl.after(settingEl);
+			}
 		}
 	}
 

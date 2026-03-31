@@ -492,9 +492,9 @@ export default class RuleManager {
 			|| rule1?.match !== rule2?.match
 			|| rule1?.conditions?.length !== rule2?.conditions?.length
 			|| rule1?.conditions?.some((condition, i) => {
-				return condition.source !== rule2?.conditions[i].source
-					|| condition.operator !== rule2?.conditions[i].operator
-					|| condition.value !== rule2?.conditions[i].value;
+				return condition.source !== rule2?.conditions[i]?.source
+					|| condition.operator !== rule2?.conditions[i]?.operator
+					|| condition.value !== rule2?.conditions[i]?.value;
 			}) === true;
 	}
 

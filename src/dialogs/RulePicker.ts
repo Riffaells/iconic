@@ -254,17 +254,21 @@ export default class RulePicker extends Modal {
 			const index = this.scrollerEl.indexOf(settingEl);
 			// If ghost is dragged into rule above, swap the rules
 			const prevRuleEl = this.scrollerEl.children[index - 1];
-			const prevOverdrag = prevRuleEl?.clientHeight * 0.25 || 0;
-			if (prevRuleEl && y < prevRuleEl.getBoundingClientRect().bottom - prevOverdrag) {
-				navigator.vibrate?.(100); // Not supported on iOS
-				prevRuleEl.before(settingEl);
+			if (prevRuleEl) {
+				const prevOverdrag = prevRuleEl.clientHeight * 0.25;
+				if (y < prevRuleEl.getBoundingClientRect().bottom - prevOverdrag) {
+					navigator.vibrate?.(100); // Not supported on iOS
+					prevRuleEl.before(settingEl);
+				}
 			}
 			// If ghost is dragged into rule below, swap the rules
 			const nextRuleEl = this.scrollerEl.children[index + 1];
-			const nextOverdrag = nextRuleEl?.clientHeight * 0.25 || 0;
-			if (nextRuleEl && y > nextRuleEl.getBoundingClientRect().top + nextOverdrag) {
-				navigator.vibrate?.(100); // Not supported on iOS
-				nextRuleEl.after(settingEl);
+			if (nextRuleEl) {
+				const nextOverdrag = nextRuleEl?.clientHeight * 0.25;
+				if (y > nextRuleEl.getBoundingClientRect().top + nextOverdrag) {
+					navigator.vibrate?.(100); // Not supported on iOS
+					nextRuleEl.after(settingEl);
+				}
 			}
 		})
 		.onDragEnd(() => {

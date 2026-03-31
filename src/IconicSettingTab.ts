@@ -471,7 +471,8 @@ export default class IconicSettingTab extends PluginSettingTab {
 	/**
 	 * Change a dropdown indicator icon.
 	 */
-	private refreshIndicator(indicator: ExtraButtonComponent, value: string): void {
+	private refreshIndicator(indicator: ExtraButtonComponent | undefined, value: string): void {
+		if (!indicator) return;
 		switch (value) {
 			case 'desktop': indicator.setIcon('lucide-monitor'); break;
 			case 'mobile': indicator.setIcon('lucide-tablet-smartphone'); break;
