@@ -585,12 +585,15 @@ export default class IconicPlugin extends Plugin {
 				if (tFile === null) return false;
 
 				const file = this.getFileItem(tFile.path);
-				if (checking) return file !== null;
+				if (file === null) return false;
 
-				IconPicker.openSingle(this, file, (newIcon, newColor) => {
-					this.saveFileIcon(file, newIcon, newColor);
-					this.refreshManagers('file');
-				});
+				if (!checking) {
+					IconPicker.openSingle(this, file, (newIcon, newColor) => {
+						this.saveFileIcon(file, newIcon, newColor);
+						this.refreshManagers('file');
+					});
+				}
+				return true
 			},
 		});
 	}
