@@ -19,6 +19,7 @@ export default class ConditionSetting extends Setting {
 	// Elements
 	readonly gripEl: HTMLElement;
 	ghostEl: HTMLElement | null = null;
+	readonly removeEl: HTMLElement;
 
 	// Callbacks
 	private sourceChangeCallback: ((source: string) => any) | null = null;
@@ -66,11 +67,11 @@ export default class ConditionSetting extends Setting {
 			.onChange(value => this.valueChangeCallback?.(value));
 
 		// BUTTON: Remove condition
-		this.addExtraButton(button => button
+		this.removeEl = new ExtraButtonComponent(this.controlEl)
 			.setIcon('lucide-trash-2')
 			.setTooltip(STRINGS.ruleEditor.removeCondition)
 			.onClick(() => this.removeCallback?.())
-		);
+			.extraSettingsEl;
 
 		// Drag & drop (mouse)
 		this.gripEl.addEventListener('pointerdown', () => {

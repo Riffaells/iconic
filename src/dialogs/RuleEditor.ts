@@ -869,7 +869,7 @@ export default class RuleEditor extends Modal {
 			setting.valInput.setValue(setting.condition.value);
 			// Insert element if not present
 			if (!setting.ctrlContainerEl.contains(setting.valInput.inputEl)) {
-				setting.ctrlContainerEl.append(setting.valInput.inputEl);
+				setting.ctrlContainerEl.insertBefore(setting.valInput.inputEl, setting.removeEl);
 			}
 		} else {
 			// Remove element
@@ -888,7 +888,7 @@ export default class RuleEditor extends Modal {
 			}
 			// Insert element if not present
 			if (!setting.ctrlContainerEl.contains(setting.valDropdown.selectEl)) {
-				setting.ctrlContainerEl.append(setting.valDropdown.selectEl);
+				setting.ctrlContainerEl.insertBefore(setting.valDropdown.selectEl, setting.removeEl);
 			}
 
 			// Preserve the selected value if possible
