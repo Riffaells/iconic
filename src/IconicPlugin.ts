@@ -37,7 +37,7 @@ const SYNCABLE_TYPES = ['image', 'audio', 'video', 'pdf', 'unsupported'];
 const IMAGE_EXTENSIONS = ['bmp', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif'];
 const AUDIO_EXTENSIONS = ['mp3', 'wav', 'm4a', '3gp', 'flac', 'ogg', 'oga', 'opus'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogv', 'mov', 'mkv'];
-const SYNCABLE_EXTENSIONS = ['md', 'canvas', 'pdf'].concat(IMAGE_EXTENSIONS).concat(AUDIO_EXTENSIONS).concat(VIDEO_EXTENSIONS);
+const SYNCABLE_EXTENSIONS = ['md', 'canvas', 'base', 'pdf'].concat(IMAGE_EXTENSIONS).concat(AUDIO_EXTENSIONS).concat(VIDEO_EXTENSIONS);
 
 const HOUR = 1000 * 60 * 60; // 1 hour in millis
 const MINUTE = 1000 * 60; // 1 minute in millis
@@ -941,7 +941,7 @@ export default class IconicPlugin extends Plugin {
 		extension: string // Extension only
 		subpath: string   // #Subpath after extension
 	} {
-		const subpathExts = ['md', 'pdf']; // Extensions with linkable subpaths
+		const subpathExts = ['md', 'base', 'pdf']; // Extensions with linkable subpaths
 		const subpathStart = Math.max(...subpathExts.map(ext => {
 			const index = fileId.lastIndexOf(`.${ext}#`);
 			return index > -1 ? (index + ext.length + 1) : -1;
