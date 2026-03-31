@@ -1352,7 +1352,7 @@ export default class IconicPlugin extends Plugin {
 	 */
 	private async loadSettings(): Promise<void> {
 		const { adapter } = this.app.vault;
-		const dataPath = normalizePath(this.app.vault.configDir + '/plugins/iconic/data.json');
+		const dataPath = normalizePath(this.manifest.dir + '/data.json');
 		const backupPath = normalizePath(dataPath + '.backup');
 
 		// If a backup exists, check `data.json` for corruption
@@ -1380,7 +1380,7 @@ export default class IconicPlugin extends Plugin {
 	 */
 	private async restoreBackup(): Promise<void> {
 		const { adapter } = this.app.vault;
-		const dataPath = normalizePath(this.app.vault.configDir + '/plugins/iconic/data.json');
+		const dataPath = normalizePath(this.manifest.dir + '/data.json');
 		const backupPath = normalizePath(dataPath + '.backup');
 		const backupStat = await adapter.stat(backupPath + 1);
 		if (!backupStat) return;
@@ -1438,7 +1438,7 @@ export default class IconicPlugin extends Plugin {
 	 * Backup settings to separate file
 	 */
 	async saveBackup(): Promise<void> {
-		const dataPath = normalizePath(this.app.vault.configDir + '/plugins/iconic/data.json');
+		const dataPath = normalizePath(this.manifest.dir + '/data.json');
 		const backupPath = normalizePath(dataPath + '.backup');
 		const { adapter } = this.app.vault;
 

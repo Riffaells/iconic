@@ -1,4 +1,4 @@
-import { ExtraButtonComponent, normalizePath, Platform, PluginSettingTab, SettingGroup } from 'obsidian';
+import { ExtraButtonComponent, Platform, PluginSettingTab, SettingGroup } from 'obsidian';
 import IconicPlugin, { STRINGS } from 'src/IconicPlugin';
 import RulePicker from 'src/dialogs/RulePicker';
 
@@ -446,7 +446,7 @@ export default class IconicSettingTab extends PluginSettingTab {
 				if (Platform.isDesktop) setting.addExtraButton(button => button
 					.setIcon('lucide-folder-open')
 					// @ts-expect-error (Private API)
-					.onClick(() => this.app.openWithDefaultApp(normalizePath(this.app.vault.configDir + '/plugins/iconic')))
+					.onClick(() => this.app.openWithDefaultApp(this.plugin.manifest.dir ?? ''))
 				)
 			})
 			.addDropdown(dropdown => dropdown
