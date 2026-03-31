@@ -831,7 +831,7 @@ export default class RuleEditor extends Modal {
 				break;
 			}
 			case 'datetime': {
-				inputType = 'datetime_local';
+				inputType = 'datetime-local';
 				inputPlaceholder = '';
 				break;
 			}
