@@ -1,12 +1,12 @@
 import { ButtonComponent, Modal, Platform, Setting, TextComponent } from 'obsidian';
-import IconicPlugin, { Category, Icon, Item, FileItem, STRINGS } from 'src/IconicPlugin';
-import { RuleItem, ConditionItem } from 'src/managers/RuleManager';
-import IconManager from 'src/managers/IconManager';
-import RuleChecker from 'src/dialogs/RuleChecker';
-import IconPicker from 'src/dialogs/IconPicker';
-import ConditionSetting from 'src/components/ConditionSetting';
-import ConditionValueSuggest from 'src/components/ConditionValueSuggest';
-import RuleNameSuggest from 'src/components/RuleNameSuggest';
+import IconicPlugin, { Category, Icon, Item, FileItem, STRINGS } from 'src/IconicPlugin.js';
+import { RuleItem, ConditionItem } from 'src/managers/RuleManager.js';
+import IconManager from 'src/managers/IconManager.js';
+import RuleChecker from 'src/dialogs/RuleChecker.js';
+import IconPicker from 'src/dialogs/IconPicker.js';
+import ConditionSetting from 'src/components/ConditionSetting.js';
+import ConditionValueSuggest from 'src/components/ConditionValueSuggest.js';
+import RuleNameSuggest from 'src/components/RuleNameSuggest.js';
 
 export type OperatorValueType = 'text' | 'regex' | 'number' | 'datetime' | 'date' | 'time' | 'weekday' | 'month' | 'color' | 'hex';
 
@@ -479,9 +479,9 @@ export default class RuleEditor extends Modal {
 	private matches: FileItem[] = [];
 
 	// Components
-	private scrollerEl: HTMLElement;
-	private nameField: TextComponent;
-	private matchesButton: ButtonComponent;
+	private scrollerEl!: HTMLElement;
+	private nameField!: TextComponent;
+	private matchesButton!: ButtonComponent;
 
 	private constructor(plugin: IconicPlugin, page: Category, rule: RuleItem, callback: RuleEditorCallback | null) {
 		super(plugin.app);
@@ -505,7 +505,8 @@ export default class RuleEditor extends Modal {
 	 * Open a dialog to edit a single rule.
 	 */
 	static open(plugin: IconicPlugin, page: Category, rule: RuleItem, callback: RuleEditorCallback): void {
-		new RuleEditor(plugin, page, rule, callback).open();
+		// Silently no-op if rulebook hasn't finished loading
+		if (plugin.ruleManager) new RuleEditor(plugin, page, rule, callback).open();
 	}
 
 	/**
@@ -525,18 +526,18 @@ export default class RuleEditor extends Modal {
 
 		// BUTTON: Rule icon
 		nameSetting.addExtraButton(button => { button
-			.setIcon(this.rule.icon ?? this.plugin.ruleManager.getPageIcon(this.page))
+			.setIcon(this.rule.icon ?? this.plugin.ruleManager!.getPageIcon(this.page))
 			.setTooltip(STRINGS.iconPicker.changeIcon)
 			.onClick(() => IconPicker.openSingle(this.plugin, this.rule, (newIcon, newColor) => {
 				this.iconManager.refreshIcon({
-					icon: newIcon ?? this.plugin.ruleManager.getPageIcon(this.page),
+					icon: newIcon ?? this.plugin.ruleManager!.getPageIcon(this.page),
 					color: newColor,
 				}, button.extraSettingsEl);
 				this.rule.icon = newIcon;
 				this.rule.color = newColor;
 			}));
 			this.iconManager.refreshIcon({
-				icon: this.rule.icon ?? this.plugin.ruleManager.getPageIcon(this.page),
+				icon: this.rule.icon ?? this.plugin.ruleManager!.getPageIcon(this.page),
 				color: this.rule.color,
 			}, button.extraSettingsEl);
 		});
@@ -986,7 +987,7 @@ export default class RuleEditor extends Modal {
 		// If ghost is dragged into condition above, swap the conditions
 		const prevCondEl = this.scrollerEl.children[index - 1];
 		if (prevCondEl) {
-			const prevOverdrag = prevCondEl?.clientHeight * 0.25;
+			const prevOverdrag = prevCondEl.clientHeight * 0.25;
 			if (y < prevCondEl.getBoundingClientRect().bottom - prevOverdrag) {
 				navigator.vibrate?.(100); // Not supported on iOS
 				prevCondEl.before(settingEl);
@@ -996,7 +997,7 @@ export default class RuleEditor extends Modal {
 		// If ghost is dragged into condition below, swap the conditions
 		const nextCondEl = this.scrollerEl.children[index + 1];
 		if (nextCondEl) {
-			const nextOverdrag = nextCondEl?.clientHeight * 0.25 || 0;
+			const nextOverdrag = nextCondEl.clientHeight * 0.25 || 0;
 			if (y > nextCondEl.getBoundingClientRect().top + nextOverdrag) {
 				navigator.vibrate?.(100); // Not supported on iOS
 				nextCondEl.after(settingEl);
@@ -1042,8 +1043,8 @@ export default class RuleEditor extends Modal {
 
 		// Update matches
 		switch (this.page) {
-			case 'file': this.matches = this.plugin.ruleManager.judgeFiles(this.rule, new Date(), true); break;
-			case 'folder': this.matches = this.plugin.ruleManager.judgeFolders(this.rule, new Date(), true); break;
+			case 'file': this.matches = this.plugin.ruleManager!.judgeFiles(this.rule, new Date(), true); break;
+			case 'folder': this.matches = this.plugin.ruleManager!.judgeFolders(this.rule, new Date(), true); break;
 		}
 		this.modalEl.win.clearTimeout(timeoutId);
 
@@ -1083,6 +1084,5 @@ export default class RuleEditor extends Modal {
 		for (const ghostEl of this.modalEl.doc.body.findAll(':scope > .iconic-condition-dragger')) {
 			ghostEl.remove();
 		}
-
 	}
 }

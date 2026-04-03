@@ -1,22 +1,22 @@
 import { Command, Notice, Platform, Plugin, TAbstractFile, TFile, TFolder, View, WorkspaceFloating, WorkspaceLeaf, WorkspaceRoot, getIconIds, getLanguage, normalizePath } from 'obsidian';
-import IconicSettingTab from 'src/IconicSettingTab';
-import EMOJIS from 'src/Emojis';
-import STRINGS from 'src/Strings';
-import MenuManager from 'src/managers/MenuManager';
-import RuleManager, { RuleTrigger } from 'src/managers/RuleManager';
-import IconManager from 'src/managers/IconManager';
-import AppIconManager from 'src/managers/AppIconManager';
-import TabIconManager from 'src/managers/TabIconManager';
-import FileIconManager from 'src/managers/FileIconManager';
-import BookmarkIconManager from 'src/managers/BookmarkIconManager';
-import TagIconManager from 'src/managers/TagIconManager';
-import PropertyIconManager from 'src/managers/PropertyIconManager';
-import EditorIconManager from 'src/managers/EditorIconManager';
-import RibbonIconManager from 'src/managers/RibbonIconManager';
-import SuggestionIconManager from 'src/managers/SuggestionIconManager';
-import SuggestionDialogIconManager from 'src/managers/SuggestionDialogIconManager';
-import IconPicker from 'src/dialogs/IconPicker';
-import RulePicker from 'src/dialogs/RulePicker';
+import IconicSettingTab from 'src/IconicSettingTab.js';
+import EMOJIS from 'src/Emojis.js';
+import STRINGS from 'src/Strings.js';
+import MenuManager from 'src/managers/MenuManager.js';
+import RuleManager, { RuleTrigger } from 'src/managers/RuleManager.js';
+import IconManager from 'src/managers/IconManager.js';
+import AppIconManager from 'src/managers/AppIconManager.js';
+import TabIconManager from 'src/managers/TabIconManager.js';
+import FileIconManager from 'src/managers/FileIconManager.js';
+import BookmarkIconManager from 'src/managers/BookmarkIconManager.js';
+import TagIconManager from 'src/managers/TagIconManager.js';
+import PropertyIconManager from 'src/managers/PropertyIconManager.js';
+import EditorIconManager from 'src/managers/EditorIconManager.js';
+import RibbonIconManager from 'src/managers/RibbonIconManager.js';
+import SuggestionIconManager from 'src/managers/SuggestionIconManager.js';
+import SuggestionDialogIconManager from 'src/managers/SuggestionDialogIconManager.js';
+import IconPicker from 'src/dialogs/IconPicker.js';
+import RulePicker from 'src/dialogs/RulePicker.js';
 
 export const ICONS = new Map<string, string>();
 export { EMOJIS };
@@ -190,9 +190,9 @@ const DEFAULT_SETTINGS: IconicSettings = {
  * Loads, unloads, and manages storage for the plugin.
  */
 export default class IconicPlugin extends Plugin {
-	settings: IconicSettings;
-	menuManager: MenuManager;
-	ruleManager: RuleManager;
+	settings: IconicSettings = DEFAULT_SETTINGS;
+	menuManager?: MenuManager;
+	ruleManager?: RuleManager;
 	appIconManager?: AppIconManager;
 	tabIconManager?: TabIconManager;
 	fileIconManager?: FileIconManager;
@@ -339,7 +339,7 @@ export default class IconicPlugin extends Plugin {
 			this.registerEvent(this.app.vault.on('create', tAbstractFile => {
 				const page = tAbstractFile instanceof TFile ? 'file' : 'folder';
 				// If a created file/folder triggers a new ruling, refresh icons
-				if (this.ruleManager.triggerRulings(page, 'rename', 'move', 'modify')) {
+				if (this.ruleManager?.triggerRulings(page, 'rename', 'move', 'modify')) {
 					this.refreshManagers(page);
 				}
 			}));
@@ -356,10 +356,10 @@ export default class IconicPlugin extends Plugin {
 				const { filename: oldFilename, tree: oldTree } = this.splitFilePath(oldPath);
 				const page = tAbstractFile instanceof TFile ? 'file' : 'folder';
 				// If a renamed file/folder triggers a new ruling, refresh icons
-				if (filename !== oldFilename && this.ruleManager.triggerRulings(page, 'rename')) {
+				if (filename !== oldFilename && this.ruleManager?.triggerRulings(page, 'rename')) {
 					this.refreshManagers(page);
 				// If a moved file/folder triggers a new ruling, refresh icons
-				} else if (tree !== oldTree && this.ruleManager.triggerRulings(page, 'move')) {
+				} else if (tree !== oldTree && this.ruleManager?.triggerRulings(page, 'move')) {
 					this.refreshManagers(page);
 				}
 			}));
@@ -379,7 +379,7 @@ export default class IconicPlugin extends Plugin {
 				}
 				// If a deleted file/folder was associated with a ruling, update rulings
 				const page = tAbstractFile instanceof TFile ? 'file' : 'folder';
-				if (this.ruleManager.checkRuling(page, path)) {
+				if (this.ruleManager?.checkRuling(page, path)) {
 					this.ruleManager.updateRulings(page);
 				}
 			}));
@@ -521,7 +521,7 @@ export default class IconicPlugin extends Plugin {
 				this.settings.showMenuActions = !this.settings.showMenuActions;
 				this.saveSettings();
 				this.refreshManagers();
-				this.menuManager.closeAndFlush();
+				this.menuManager?.closeAndFlush();
 			}
 		});
 
@@ -613,7 +613,7 @@ export default class IconicPlugin extends Plugin {
 	private onFileModify(tAbstractFile: TAbstractFile): void {
 		const page = tAbstractFile instanceof TFile ? 'file' : 'folder';
 		// If a modified file/folder triggers a new ruling, refresh icons
-		if (this.ruleManager.triggerRulings(page, 'modify')) {
+		if (this.ruleManager?.triggerRulings(page, 'modify')) {
 			this.refreshManagers(page);
 		}
 	}
@@ -1223,7 +1223,7 @@ export default class IconicPlugin extends Plugin {
 		if (color !== fileBase?.color) triggers.add('color');
 		this.updateIconSetting(this.settings.fileIcons, file.id, icon, color);
 		this.saveSettings();
-		this.ruleManager.triggerRulings('file', ...triggers);
+		this.ruleManager?.triggerRulings('file', ...triggers);
 	}
 
 	/**
@@ -1242,7 +1242,7 @@ export default class IconicPlugin extends Plugin {
 			this.updateIconSetting(this.settings.fileIcons, file.id, file.icon, file.color);
 		}
 		this.saveSettings();
-		this.ruleManager.triggerRulings('file', ...triggers);
+		this.ruleManager?.triggerRulings('file', ...triggers);
 	}
 
 	/**
@@ -1263,7 +1263,7 @@ export default class IconicPlugin extends Plugin {
 			}
 		}
 		this.saveSettings();
-		this.ruleManager.triggerRulings('file', ...triggers);
+		this.ruleManager?.triggerRulings('file', ...triggers);
 	}
 
 	/**
@@ -1290,7 +1290,7 @@ export default class IconicPlugin extends Plugin {
 			}
 		}
 		this.saveSettings();
-		this.ruleManager.triggerRulings('file', ...triggers);
+		this.ruleManager?.triggerRulings('file', ...triggers);
 	}
 
 	/**
@@ -1565,8 +1565,8 @@ export default class IconicPlugin extends Plugin {
 	 * @override
 	 */
 	onunload(): void {
-		this.menuManager.unload();
-		this.ruleManager.unload();
+		this.menuManager?.unload();
+		this.ruleManager?.unload();
 		this.appIconManager?.unload();
 		this.tabIconManager?.unload();
 		this.fileIconManager?.unload();

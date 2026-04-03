@@ -1,5 +1,5 @@
 import { ButtonComponent, Modal, Setting } from 'obsidian';
-import IconicPlugin, { Category, FileItem, STRINGS } from 'src/IconicPlugin';
+import IconicPlugin, { Category, FileItem, STRINGS } from 'src/IconicPlugin.js';
 
 /**
  * Dialog for previewing the items matched by a rule.

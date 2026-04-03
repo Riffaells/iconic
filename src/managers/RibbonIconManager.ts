@@ -1,8 +1,8 @@
 import { Menu, Platform } from 'obsidian';
-import IconicPlugin, { RibbonItem, STRINGS } from 'src/IconicPlugin';
-import MenuManager from 'src/managers/MenuManager';
-import IconManager from 'src/managers/IconManager';
-import IconPicker from 'src/dialogs/IconPicker';
+import IconicPlugin, { RibbonItem, STRINGS } from 'src/IconicPlugin.js';
+import MenuManager from 'src/managers/MenuManager.js';
+import IconManager from 'src/managers/IconManager.js';
+import IconPicker from 'src/dialogs/IconPicker.js';
 
 /**
  * Handles icons in the app ribbon.
@@ -28,7 +28,7 @@ export default class RibbonIconManager extends IconManager {
 		);
 		if (ribbonEl) this.setEventListener(ribbonEl, 'contextmenu', () => {
 			const ribbonItems = this.plugin.getRibbonItems();
-			this.plugin.menuManager.forSection('order', item => {
+			this.plugin.menuManager?.forSection('order', item => {
 				const firstItem = ribbonItems.first();
 				// @ts-expect-error (Private API)
 				if (firstItem && item.iconEl.childElementCount > 0) { // Ribbon Divider compatibility
@@ -68,7 +68,7 @@ export default class RibbonIconManager extends IconManager {
 			const quickItemId = this.app.vault.getConfig('mobileQuickRibbonItem');
 			const ribbonButtonListener = () => {
 				const firstRibItem = this.plugin.getRibbonItems().filter(item => !item.isHidden);
-				this.plugin.menuManager.forSection('', item => {
+				this.plugin.menuManager?.forSection('', item => {
 					const ribbonItem = firstRibItem[0];
 					if (ribbonItem) {
 						item.setIcon(ribbonItem.icon);
@@ -174,20 +174,20 @@ export default class RibbonIconManager extends IconManager {
 	 */
 	private onContextMenu(ribbonItemId: string, event: MouseEvent): void {
 		navigator.vibrate?.(100); // Not supported on iOS
-		this.plugin.menuManager.closeAndFlush();
+		this.plugin.menuManager?.closeAndFlush();
 		const ribbonItem = this.plugin.getRibbonItem(ribbonItemId);
 
 		// Menu compatibility with Periodic Notes plugin
-		let menu: Menu | MenuManager;
+		let menu: Menu | MenuManager | undefined;
 		if (ribbonItemId.startsWith('periodic-notes:')) {
 			menu = this.plugin.menuManager;
-			menu.forSection('', menuItem => menuItem.setSection('open'));
+			menu?.forSection('', menuItem => menuItem.setSection('open'));
 		} else {
 			menu = new Menu();
 		}
 
 		// Change icon
-		menu.addItem(menuItem => menuItem
+		menu?.addItem(menuItem => menuItem
 			.setTitle(STRINGS.menu.changeIcon)
 			.setIcon('lucide-image-plus')
 			.setSection('icon')
@@ -199,7 +199,7 @@ export default class RibbonIconManager extends IconManager {
 
 		// Remove icon / Reset color
 		if (ribbonItem.icon || ribbonItem.color) {
-			menu.addItem(menuItem => menuItem
+			menu?.addItem(menuItem => menuItem
 				.setTitle(ribbonItem.icon ? STRINGS.menu.removeIcon : STRINGS.menu.resetColor)
 				.setIcon(ribbonItem.icon ? 'lucide-image-minus' : 'lucide-rotate-ccw')
 				.setSection('icon')

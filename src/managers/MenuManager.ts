@@ -4,7 +4,7 @@ import { Menu, MenuItem, MenuPositionDef } from 'obsidian';
  * Intercepts context menus to add custom items.
  */
 export default class MenuManager {
-	private menu: Menu | null;
+	private menu: Menu | null = null;
 	private queuedActions: (() => void)[] = [];
 	private showAtPositionOriginal: typeof Menu.prototype.showAtPosition;
 	private showAtPositionProxy: typeof Menu.prototype.showAtPosition;

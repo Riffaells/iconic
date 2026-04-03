@@ -1,5 +1,5 @@
 import { TFile } from 'obsidian';
-import IconicPlugin, { Category, Item, FileItem, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin';
+import IconicPlugin, { Category, Item, FileItem, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin.js';
 
 const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
@@ -26,7 +26,7 @@ export default class RuleManager {
 	private readonly folderRulings = new Map<string, RuleItem>();
 	private readonly fileTriggers = new Set<RuleTrigger>();
 	private readonly folderTriggers = new Set<RuleTrigger>();
-	private triggerTimerId: number;
+	private triggerTimerId?: number;
 
 	constructor(plugin: IconicPlugin) {
 		this.plugin = plugin;
@@ -165,7 +165,7 @@ export default class RuleManager {
 			id: this.newRuleId(page),
 			name: STRINGS.rulePicker.untitledRule,
 			category: 'rule',
-			iconDefault: this.plugin.ruleManager.getPageIcon(page),
+			iconDefault: this.getPageIcon(page),
 			icon: null,
 			color: null,
 			match: 'all',

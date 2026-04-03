@@ -1,9 +1,9 @@
 import { ButtonComponent, ColorComponent, ExtraButtonComponent, Hotkey, Menu, Modal, Platform, Setting, TextComponent, displayTooltip, prepareFuzzySearch, setTooltip } from 'obsidian';
-import IconicPlugin, { Category, Item, Icon, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin';
-import ColorUtils, { COLORS } from 'src/ColorUtils';
-import { RuleItem } from 'src/managers/RuleManager';
-import IconManager from 'src/managers/IconManager';
-import RuleEditor from 'src/dialogs/RuleEditor';
+import IconicPlugin, { Category, Item, Icon, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin.js';
+import ColorUtils, { COLORS } from 'src/ColorUtils.js';
+import { RuleItem } from 'src/managers/RuleManager.js';
+import IconManager from 'src/managers/IconManager.js';
+import RuleEditor from 'src/dialogs/RuleEditor.js';
 
 const COLOR_KEYS = [...COLORS.keys()];
 
@@ -80,16 +80,16 @@ export default class IconPicker extends Modal {
 	private readonly multiCallback: MultiIconPickerCallback | null;
 
 	// Components
-	private overruleEl: HTMLElement;
-	private searchSetting: Setting;
-	private searchResultsSetting: Setting;
-	private colorResetButton: ExtraButtonComponent;
-	private colorPicker: ColorComponent;
-	private searchField: TextComponent;
-	private iconModeButton: ExtraButtonComponent;
-	private emojiModeButton: ExtraButtonComponent;
-	private mobileModeButton: ButtonComponent;
-	private colorPickerEl: HTMLElement;
+	private overruleEl!: HTMLElement;
+	private searchSetting!: Setting;
+	private searchResultsSetting!: Setting;
+	private colorResetButton!: ExtraButtonComponent;
+	private colorPicker!: ColorComponent;
+	private searchField!: TextComponent;
+	private iconModeButton!: ExtraButtonComponent;
+	private emojiModeButton!: ExtraButtonComponent;
+	private mobileModeButton!: ButtonComponent;
+	private colorPickerEl!: HTMLElement;
 
 	// State
 	private colorPickerPaused = false;
@@ -723,14 +723,14 @@ export default class IconPicker extends Modal {
 		// Determine which rule to display
 		if (this.items.length > 1) {
 			for (const item of this.items) {
-				rule = this.plugin.ruleManager.checkRuling(item.category, item.id);
+				rule = this.plugin.ruleManager?.checkRuling(item.category, item.id) ?? null;
 				page = item.category;
 				if (rule) break;
 			}
 		} else {
 			const item = this.items.first();
 			if (item) {
-				rule = this.plugin.ruleManager.checkRuling(item.category, item.id);
+				rule = this.plugin.ruleManager?.checkRuling(item.category, item.id) ?? null;
 				page = item.category;
 			}
 		}
@@ -761,8 +761,8 @@ export default class IconPicker extends Modal {
 					if (page && rule) RuleEditor.open(this.plugin, page, rule, newRule => {
 						if (!rule) return;
 						const isRulingChanged = newRule
-							? this.plugin.ruleManager.saveRule(page, newRule)
-							: this.plugin.ruleManager.deleteRule(page, rule.id);
+							? this.plugin.ruleManager?.saveRule(page, newRule)
+							: this.plugin.ruleManager?.deleteRule(page, rule.id);
 						if (isRulingChanged) {
 							this.plugin.refreshManagers(page);
 						}

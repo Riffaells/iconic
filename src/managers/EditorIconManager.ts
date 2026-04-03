@@ -1,11 +1,11 @@
 import { Editor, MarkdownView, Menu } from 'obsidian';
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
-import IconicPlugin, { TagItem, PropertyItem, STRINGS } from 'src/IconicPlugin';
-import ColorUtils from 'src/ColorUtils';
-import IconManager from 'src/managers/IconManager';
-import RuleEditor from 'src/dialogs/RuleEditor';
-import IconPicker from 'src/dialogs/IconPicker';
+import IconicPlugin, { TagItem, PropertyItem, STRINGS } from 'src/IconicPlugin.js';
+import ColorUtils from 'src/ColorUtils.js';
+import IconManager from 'src/managers/IconManager.js';
+import RuleEditor from 'src/dialogs/RuleEditor.js';
+import IconPicker from 'src/dialogs/IconPicker.js';
 
 /**
  * Handles icons in the editor window of Markdown tabs.
@@ -244,7 +244,7 @@ export default class EditorIconManager extends IconManager {
 
 		// Get file and/or rule icon
 		const file = this.plugin.getFileItem(view.file.path);
-		const rule = this.plugin.ruleManager.checkRuling('file', file.id) ?? file;
+		const rule = this.plugin.ruleManager?.checkRuling('file', file.id) ?? file;
 		if (!rule.icon && !rule.color) file.iconDefault = null;
 
 		// Refresh icon
@@ -285,15 +285,15 @@ export default class EditorIconManager extends IconManager {
 						this.plugin.refreshManagers('file');
 					})
 				);
-				const rule = this.plugin.ruleManager.checkRuling('file', file.id);
+				const rule = this.plugin.ruleManager?.checkRuling('file', file.id);
 				if (rule) menu.addItem(item => { item
 					.setTitle('Edit rule...')
 					.setIcon('lucide-image-play')
 					.setSection('icon')
 					.onClick(() => RuleEditor.open(this.plugin, 'file', rule, newRule => {
 						const isRulingChanged = newRule
-							? this.plugin.ruleManager.saveRule('file', newRule)
-							: this.plugin.ruleManager.deleteRule('file', rule.id);
+							? this.plugin.ruleManager?.saveRule('file', newRule)
+							: this.plugin.ruleManager?.deleteRule('file', rule.id);
 						if (isRulingChanged) {
 							this.refreshIcons();
 							this.plugin.refreshManagers('file');
@@ -446,11 +446,11 @@ export default class EditorIconManager extends IconManager {
 	 */
 	private onPropertyContextMenu(propId: string): void {
 		navigator.vibrate?.(100); // Not supported on iOS
-		this.plugin.menuManager.closeAndFlush();
+		this.plugin.menuManager?.closeAndFlush();
 		const prop = this.plugin.getPropertyItem(propId);
 
 		// Change icon
-		this.plugin.menuManager.addItemAfter(['action.changeType', 'action'], item => item
+		this.plugin.menuManager?.addItemAfter(['action.changeType', 'action'], item => item
 			.setTitle(STRINGS.menu.changeIcon)
 			.setIcon('lucide-image-plus')
 			.setSection('icon')
@@ -462,7 +462,7 @@ export default class EditorIconManager extends IconManager {
 
 		// Remove icon / Reset color
 		if (prop.icon || prop.color) {
-			this.plugin.menuManager.addItem(item => item
+			this.plugin.menuManager?.addItem(item => item
 				.setTitle(prop.icon ? STRINGS.menu.removeIcon : STRINGS.menu.resetColor)
 				.setIcon(prop.icon ? 'lucide-image-minus' : 'lucide-rotate-ccw')
 				.setSection('icon')
@@ -478,12 +478,12 @@ export default class EditorIconManager extends IconManager {
 	 * When user context-clicks a tag, add custom items to the menu.
 	 */
 	private onTagContextMenu(tagId: string, isEditingMode?: boolean): void {
-		this.plugin.menuManager.closeAndFlush();
+		this.plugin.menuManager?.closeAndFlush();
 		const tag = this.plugin.getTagItem(tagId);
 		if (!tag) return;
 
 		// Change icon
-		this.plugin.menuManager.addItemAfter(isEditingMode ? [] : 'selection', menuItem => menuItem
+		this.plugin.menuManager?.addItemAfter(isEditingMode ? [] : 'selection', menuItem => menuItem
 			.setTitle(STRINGS.menu.changeIcon)
 			.setIcon('lucide-image-plus')
 			.setSection('icon')
@@ -495,7 +495,7 @@ export default class EditorIconManager extends IconManager {
 
 		// Remove icon / Reset color
 		if (tag.icon || tag.color) {
-			this.plugin.menuManager.addItem(menuItem => menuItem
+			this.plugin.menuManager?.addItem(menuItem => menuItem
 				.setTitle(tag.icon ? STRINGS.menu.removeIcon : STRINGS.menu.resetColor)
 				.setIcon(tag.icon ? 'lucide-image-minus' : 'lucide-rotate-ccw')
 				.setSection('icon')

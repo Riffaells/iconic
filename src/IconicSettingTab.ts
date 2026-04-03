@@ -1,6 +1,6 @@
 import { ExtraButtonComponent, Platform, PluginSettingTab, SettingGroup } from 'obsidian';
-import IconicPlugin, { STRINGS } from 'src/IconicPlugin';
-import RulePicker from 'src/dialogs/RulePicker';
+import IconicPlugin, { STRINGS } from 'src/IconicPlugin.js';
+import RulePicker from 'src/dialogs/RulePicker.js';
 
 /**
  * Exposes UI settings for the plugin.

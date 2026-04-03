@@ -1,15 +1,17 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
+		"paths": {
+			"*": ["./*"]
+		},
 		"inlineSourceMap": true,
 		"inlineSources": true,
-		"module": "ESNext",
-		"target": "ES2021",
+		"module": "node16",
+		"target": "es2021",
 		"allowJs": true,
 		"noImplicitAny": true,
 		"noImplicitThis": true,
 		"noImplicitReturns": true,
-		"moduleResolution": "node",
+		"moduleResolution": "node16",
 		"importHelpers": true,
 		"noUncheckedIndexedAccess": true,
 		"isolatedModules": true,
@@ -25,6 +27,6 @@
 		]
 	},
 	"include": [
-		"**/*.ts"
+		"src/**/*.ts"
 	]
 }

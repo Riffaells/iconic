@@ -1,6 +1,6 @@
 import { DropdownComponent, ExtraButtonComponent, Platform, Setting, TextComponent } from 'obsidian';
-import { STRINGS } from 'src/IconicPlugin';
-import { ConditionItem } from 'src/managers/RuleManager';
+import { STRINGS } from 'src/IconicPlugin.js';
+import { ConditionItem } from 'src/managers/RuleManager.js';
 
 /**
  * Setting for displaying a condition item.
