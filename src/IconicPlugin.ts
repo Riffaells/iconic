@@ -1444,15 +1444,16 @@ export default class IconicPlugin extends Plugin {
 
 		// Determine if a new backup is due for creation
 		const backupStat = await adapter.stat(backupPath + 1);
-		const isDueForBackup = !backupStat || Date.now() - backupStat.mtime >= HOUR * 3;
+		const timeSinceLastBackup = Date.now() - (backupStat?.mtime ?? 0);
+		const isDueForBackup = this.settings.maxBackups > 0 && timeSinceLastBackup >= HOUR * 3;
 
 		// Loop through backup files
 		for (let i = 10; i--; i === 0) {
 			if (await adapter.exists(backupPath + i)) {
-				if (i > this.settings.maxBackups) {
-					// Delete any backup numbered higher than the maximum
+				if (i > this.settings.maxBackups || isDueForBackup && i === this.settings.maxBackups) {
+					// Delete any backup numbered higher than the maximum, or due for replacement
 					await adapter.remove(backupPath + i);
-				} else if (isDueForBackup) {
+				} else if (isDueForBackup && i < this.settings.maxBackups) {
 					// Increment backup number
 					await adapter.rename(backupPath + i, backupPath + (i + 1));
 				}
