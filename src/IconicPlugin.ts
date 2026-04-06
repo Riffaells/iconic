@@ -640,36 +640,36 @@ export default class IconicPlugin extends Plugin {
 	 * Refresh all icon managers, or a specific group of them.
 	 */
 	refreshManagers(...categories: Category[]): void {
-		if (categories) {
+		if (categories.length === 0) {
 			categories = ['app', 'tab', 'file', 'folder', 'tag', 'property', 'ribbon'];
 		}
 		const managers = new Set<IconManager | undefined>();
 
-		if (categories?.includes('app')) {
+		if (categories.includes('app')) {
 			managers.add(this.appIconManager);
 		}
-		if (categories?.includes('tab')) {
+		if (categories.includes('tab')) {
 			managers.add(this.tabIconManager);
 		}
-		if (categories?.includes('file')) {
+		if (categories.includes('file')) {
 			managers.add(this.tabIconManager);
 			managers.add(this.fileIconManager);
 			managers.add(this.bookmarkIconManager);
 			managers.add(this.editorIconManager);
 		}
-		if (categories?.includes('folder')) {
+		if (categories.includes('folder')) {
 			managers.add(this.fileIconManager);
 			managers.add(this.bookmarkIconManager);
 		}
-		if (categories?.includes('tag')) {
+		if (categories.includes('tag')) {
 			managers.add(this.tagIconManager);
 			managers.add(this.editorIconManager);
 		}
-		if (categories?.includes('property')) {
+		if (categories.includes('property')) {
 			managers.add(this.propertyIconManager);
 			managers.add(this.editorIconManager);
 		}
-		if (categories?.includes('ribbon')) {
+		if (categories.includes('ribbon')) {
 			managers.add(this.ribbonIconManager);
 		}
 
