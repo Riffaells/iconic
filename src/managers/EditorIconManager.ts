@@ -95,7 +95,7 @@ export default class EditorIconManager extends IconManager {
 		// @ts-expect-error (Private API)
 		const propsEl: HTMLElement = view.metadataEditor?.propertyListEl;
 		if (!propsEl) return;
-		this.observeProperties(propsEl, view);
+		this.observeProperties(propsEl, view, true);
 
 		// `tags` property
 		const tagsEl: HTMLElement = propsEl.find('.metadata-property[data-property-key="tags"] .multi-select-container');
@@ -106,7 +106,14 @@ export default class EditorIconManager extends IconManager {
 	/**
 	 * Refresh whenever a given properties list needs to redraw its icons.
 	 */
-	private observeProperties(propsEl: HTMLElement, view: MarkdownView): void {
+	private observeProperties(propsEl: HTMLElement, view: MarkdownView, shouldObserve: boolean): void {
+		if (!shouldObserve) {
+			this.stopMutationObserver(propsEl);
+			this.stopEventListener(propsEl, 'click');
+			this.stopEventListener(propsEl, 'contextmenu');
+			return;
+		}
+
 		this.setMutationObserver(propsEl, {
 			childList: true,
 			subtree: true,
@@ -186,8 +193,12 @@ export default class EditorIconManager extends IconManager {
 		this.refreshTitleIcon(view, unloading);
 
 		// Refresh property icons
+		// @ts-expect-error
+		const propsEl: HTMLElement = view.metadataEditor?.propertyListEl;
 		const props = this.plugin.getPropertyItems(unloading);
+		this.observeProperties(propsEl, view, false);
 		this.refreshPropertyIcons(props, view);
+		this.observeProperties(propsEl, view, true);
 
 		// Refresh `tags` property
 		const tags = this.plugin.getTagItems(unloading);
