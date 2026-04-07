@@ -34,7 +34,7 @@ body {
 .workspace .mod-root .workspace-tab-header[data-type="empty"] .workspace-tab-header-inner-icon {
 	display: flex;
 }
-.workspace .mod-stacked .iconic-emoji {
+.workspace .mod-stacked .workspace-tab-header-inner-icon > .iconic-emoji {
 	transform: rotate(-90deg);
 }
 .iconic-bigger-icons .mod-root .workspace-tab-header-inner-icon.iconic-icon > * {
