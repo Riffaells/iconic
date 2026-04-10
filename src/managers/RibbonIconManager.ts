@@ -86,27 +86,27 @@ export default class RibbonIconManager extends IconManager {
 				this.setEventListener(ribbonButtonEl, 'click', ribbonButtonListener);
 			}
 			this.setEventListener(ribbonButtonEl, 'contextmenu', ribbonButtonListener);
-		} else {
-			const ribbonItems = this.plugin.getRibbonItems(unloading);
-			for (const ribbonItem of ribbonItems) {
-				const iconEl = ribbonItem.iconEl;
-				if (!iconEl || iconEl.hasClass('ribbon-divider')) { // Ribbon Divider compatibility
-					continue;
-				}
-				if (ribbonItem.isHidden) {
-					ribbonItem.icon = null;
-					ribbonItem.iconDefault = null;
-				}
-				this.refreshIcon(ribbonItem, iconEl);
+		}
 
-				// Add context menu
-				if (this.plugin.settings.showMenuActions) {
-					this.setEventListener(iconEl, 'contextmenu', event => {
-						this.onContextMenu(ribbonItem.id, event);
-					}, { capture: true });
-				} else {
-					this.stopEventListener(iconEl, 'contextmenu');
-				}
+		const ribbonItems = this.plugin.getRibbonItems(unloading);
+		for (const ribbonItem of ribbonItems) {
+			const iconEl = ribbonItem.iconEl;
+			if (!iconEl || iconEl.hasClass('ribbon-divider')) { // Ribbon Divider compatibility
+				continue;
+			}
+			if (ribbonItem.isHidden) {
+				ribbonItem.icon = null;
+				ribbonItem.iconDefault = null;
+			}
+			this.refreshIcon(ribbonItem, iconEl);
+
+			// Add context menu
+			if (this.plugin.settings.showMenuActions) {
+				this.setEventListener(iconEl, 'contextmenu', event => {
+					this.onContextMenu(ribbonItem.id, event);
+				}, { capture: true });
+			} else {
+				this.stopEventListener(iconEl, 'contextmenu');
 			}
 		}
 	}
