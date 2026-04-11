@@ -1428,6 +1428,9 @@ export default class IconicPlugin extends Plugin {
 		this.settings.propertyIcons = Object.fromEntries(Object.entries(this.settings.propertyIcons).sort());
 		this.settings.ribbonIcons = Object.fromEntries(Object.entries(this.settings.ribbonIcons).sort());
 
+		// Pause before writing to storage, in case the current state cause an instant crash
+		await sleep(300);
+
 		// Save and backup settings
 		await this.saveData(this.settings);
 		this.saveBackup();
