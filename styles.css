@@ -310,13 +310,13 @@ a.tag {
 }
 .is-phone .iconic-rule,
 .is-phone .iconic-condition {
-    flex-direction: row !important;
-    align-items: center !important;
+	flex-direction: row !important;
+	align-items: center !important;
 	padding: var(--size-4-4) !important;
 }
 .is-phone .iconic-rule > .setting-item-control,
 .is-phone .iconic-condition > .setting-item-control {
-    width: auto !important;
+	width: auto !important;
 }
 .iconic-rule > *:first-child,
 .iconic-condition > *:first-child {
@@ -389,14 +389,14 @@ a.tag {
 .iconic-rule-dragger .checkbox-container,
 .iconic-condition-dragger .checkbox-container {
 	width: var(--toggle-width);
-    height: calc(var(--toggle-thumb-height) + var(--toggle-border-width) * 2);
+	height: calc(var(--toggle-thumb-height) + var(--toggle-border-width) * 2);
 }
 .iconic-rule-dragger .checkbox-container:after,
 .iconic-condition-dragger .checkbox-container:after {
 	width: var(--toggle-thumb-width);
-    height: var(--toggle-thumb-height);
-    margin: var(--toggle-border-width) 0 0 0;
-    transform: translate3d(calc(var(--toggle-width) - var(--toggle-thumb-width) - var(--toggle-border-width)), 0, 0);
+	height: var(--toggle-thumb-height);
+	margin: var(--toggle-border-width) 0 0 0;
+	transform: translate3d(calc(var(--toggle-width) - var(--toggle-thumb-width) - var(--toggle-border-width)), 0, 0);
 }
 .mod-rtl .iconic-rule-dragger,
 .mod-rtl .iconic-condition-dragger {
@@ -463,18 +463,18 @@ a.tag {
 .is-mobile .mod-confirmation > .modal.iconic-rule-checker {
 	background-color: var(--modal-background);
 }
-.iconic-matches {
+.iconic-paths {
 	padding-top: 0.75em;
 	border-top: 1px solid var(--background-modifier-border);
 	margin: 0;
 }
-.iconic-match {
+.iconic-path {
 	padding: var(--size-4-1);
 	white-space: nowrap;
 }
-.iconic-highlight-tree .iconic-match-tree,
-.iconic-highlight-name .iconic-match-name,
-.iconic-highlight-extension .iconic-match-extension {
+.iconic-highlight-tree .iconic-path-tree,
+.iconic-highlight-name .iconic-path-name,
+.iconic-highlight-extension .iconic-path-extension {
 	color: var(--text-accent);
 }
 

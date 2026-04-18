@@ -94,15 +94,15 @@ export default class RuleChecker extends Modal {
 		new Setting(this.contentEl).setHeading().setName(STRINGS.ruleChecker.headingMatches);
 
 		// LIST: Matches
-		const listEl = this.contentEl.createEl('ol', { cls: 'iconic-matches' });
+		const listEl = this.contentEl.createEl('ol', { cls: 'iconic-paths' });
 		for (const match of this.matches) {
 			const { tree, basename, extension } = this.plugin.splitFilePath(match.id);
-			const liEl = listEl.createEl('li', { cls: 'iconic-match' });
-			if (tree) liEl.createSpan({ cls: 'iconic-match-tree', text: tree });
-			if (basename) liEl.createSpan({ cls: 'iconic-match-name', text: basename });
+			const liEl = listEl.createEl('li', { cls: 'iconic-path' });
+			if (tree) liEl.createSpan({ cls: 'iconic-path-tree', text: tree });
+			if (basename) liEl.createSpan({ cls: 'iconic-path-name', text: basename });
 			if (extension) {
 				liEl.createSpan({ text: '.' });
-				liEl.createSpan({ cls: 'iconic-match-extension', text: extension });
+				liEl.createSpan({ cls: 'iconic-path-extension', text: extension });
 			}
 		}
 	}
