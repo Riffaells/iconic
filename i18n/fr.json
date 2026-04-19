@@ -270,8 +270,7 @@
 		"folderMatch": "1 dossier correspondant",
 		"filesMatch": "{#} fichiers correspondants",
 		"foldersMatch": "{#} dossiers correspondants",
-		"highlight": "Surligner",
-		"headingMatches": "Correspondances"
+		"highlight": "Surligner"
 	},
 	"commands": {
 		"openRulebook": "Ouvrir le livre de règles",

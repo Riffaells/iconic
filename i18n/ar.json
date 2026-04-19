@@ -270,8 +270,7 @@
 		"folderMatch": "مجلد واحد مطابق",
 		"filesMatch": "{#} ملفات مطابقة",
 		"foldersMatch": "{#} مجلد مطابق",
-		"highlight": "تسليط الضوء",
-		"headingMatches": "مطابقات"
+		"highlight": "تسليط الضوء"
 	},
 	"commands": {
 		"openRulebook": "فتح كتاب القواعد",

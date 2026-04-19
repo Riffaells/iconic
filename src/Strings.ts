@@ -214,7 +214,6 @@ export default class Strings {
 		filesMatch: '{#} matching files',
 		foldersMatch: '{#} matching folders',
 		highlight: 'Highlight',
-		headingMatches: 'Matches',
 	};
 	static iconPicker = {
 		changeIcon: 'Change icon',

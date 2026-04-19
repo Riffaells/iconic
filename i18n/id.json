@@ -270,8 +270,7 @@
 		"folderMatch": "1 folder yang cocok",
 		"filesMatch": "{#} file yang cocok",
 		"foldersMatch": "{#} folder yang cocok",
-		"highlight": "Sorot",
-		"headingMatches": "Cocok"
+		"highlight": "Sorot"
 	},
 	"commands": {
 		"openRulebook": "Buka buku aturan",

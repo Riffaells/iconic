@@ -270,8 +270,7 @@
 		"folderMatch": "1 відповідна тека",
 		"filesMatch": "відповідних файлів: {#}",
 		"foldersMatch": "відповідних тек: {#}",
-		"highlight": "Виділити",
-		"headingMatches": "Збіги"
+		"highlight": "Виділити"
 	},
 	"commands": {
 		"openRulebook": "Відкрити звід правил",

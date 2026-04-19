@@ -270,8 +270,7 @@
 		"folderMatch": "1 个匹配文件夹",
 		"filesMatch": "{#} 个匹配文件",
 		"foldersMatch": "{#} 个匹配文件夹",
-		"highlight": "突出显示",
-		"headingMatches": "匹配"
+		"highlight": "突出显示"
 	},
 	"commands": {
 		"openRulebook": "打开规则书",

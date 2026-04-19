@@ -270,8 +270,7 @@
 		"folderMatch": "一致するフォルダ 1 件",
 		"filesMatch": "一致するファイル {#} 件",
 		"foldersMatch": "一致するフォルダ {#} 件",
-		"highlight": "ハイライト",
-		"headingMatches": "一致"
+		"highlight": "ハイライト"
 	},
 	"commands": {
 		"openRulebook": "ルールブックを開く",

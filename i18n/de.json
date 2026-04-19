@@ -270,8 +270,7 @@
 		"folderMatch": "1 passender Ordner",
 		"filesMatch": "{#} passende Dateien",
 		"foldersMatch": "{#} passende Ordner",
-		"highlight": "Hervorheben",
-		"headingMatches": "Übereinstimmungen"
+		"highlight": "Hervorheben"
 	},
 	"commands": {
 		"openRulebook": "Regelbuch öffnen",
