@@ -463,14 +463,31 @@ a.tag {
 .is-mobile .mod-confirmation > .modal.iconic-rule-checker {
 	background-color: var(--modal-background);
 }
+.iconic-rule-checker > .modal-content {
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+}
 .iconic-paths {
 	padding-top: 0.75em;
 	border-top: 1px solid var(--background-modifier-border);
 	margin: 0;
+	overflow: auto;
 }
 .iconic-path {
+	display: flex;
+	gap: var(--size-4-2);
 	padding: var(--size-4-1);
 	white-space: nowrap;
+}
+.iconic-path .iconic-emoji {
+	height: var(--icon-size);
+	width: var(--icon-size);
+	align-content: center;
+}
+.iconic-path-inner {
+	flex-grow: 1;
+	align-content: center;
 }
 .iconic-highlight-tree .iconic-path-tree,
 .iconic-highlight-name .iconic-path-name,
