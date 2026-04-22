@@ -54,6 +54,10 @@
 			"gray": "灰色"
 		}
 	},
+	"usageChecker": {
+		"unusedIcons": "未使用的图标",
+		"noUnusedIconsFound": "未找到未使用的图标。"
+	},
 	"categories": {
 		"item": "项",
 		"items": "项",
@@ -293,6 +297,7 @@
 		"changeIconCurrentFile": "更改当前文件的图标"
 	},
 	"settings": {
+		"manage": "管理",
 		"values": {
 			"on": "开启",
 			"off": "关闭",
@@ -304,8 +309,7 @@
 		},
 		"rulebook": {
 			"name": "规则书",
-			"desc": "为文件和文件夹图标设置自动规则。",
-			"manage": "管理"
+			"desc": "为文件和文件夹图标设置自动规则。"
 		},
 		"biggerIcons": {
 			"name": "更大的图标",
@@ -400,9 +404,9 @@
 			"name": "无色功能区按钮",
 			"desc": "禁用移动设备上快速访问功能区按钮的图标颜色。"
 		},
-		"rememberDeletedItems": {
-			"name": "记住已删除项目的图标",
-			"desc": "当项目再次存在时，任何自定义图标都会重新出现。"
+		"viewUnusedIcons": {
+			"name": "查看未使用的图标",
+			"desc": "清理分配给不再位于您的库中的文件或文件夹的图标。"
 		},
 		"maxBackups": {
 			"name": "最大自动备份次数",

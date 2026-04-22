@@ -1,6 +1,7 @@
 import { ExtraButtonComponent, Platform, PluginSettingTab, SettingGroup } from 'obsidian';
-import IconicPlugin, { STRINGS } from 'src/IconicPlugin.js';
+import IconicPlugin, { FileItem, STRINGS } from 'src/IconicPlugin.js';
 import RulePicker from 'src/dialogs/RulePicker.js';
+import UsageChecker from 'src/dialogs/UsageChecker.js';
 
 /**
  * Exposes UI settings for the plugin.
@@ -36,7 +37,7 @@ export default class IconicSettingTab extends PluginSettingTab {
 			.setName(STRINGS.settings.rulebook.name)
 			.setDesc(STRINGS.settings.rulebook.desc)
 			.addButton(button => { button
-				.setButtonText(STRINGS.settings.rulebook.manage)
+				.setButtonText(STRINGS.settings.manage)
 				.onClick(() => {
 					// Silently no-op if rulebook hasn't finished loading
 					if (!this.plugin.ruleManager) return;
@@ -425,15 +426,21 @@ export default class IconicSettingTab extends PluginSettingTab {
 			)
 		);
 
-		// SETTING: Remember icons of deleted items
+		// SETTING: View unused icons
 		groupAdvanced.addSetting(setting => setting
-			.setName(STRINGS.settings.rememberDeletedItems.name)
-			.setDesc(STRINGS.settings.rememberDeletedItems.desc)
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.rememberDeletedItems)
-				.onChange(value => {
-					this.plugin.settings.rememberDeletedItems = value;
-					this.plugin.saveSettings();
+			.setName(STRINGS.settings.viewUnusedIcons.name)
+			.setDesc(STRINGS.settings.viewUnusedIcons.desc)
+			.addButton(button => button
+				.setButtonText(STRINGS.settings.manage)
+				.onClick(async () => {
+					const unusedIcons: FileItem[] = [];
+					for (const fileId of Object.keys(this.plugin.settings.fileIcons)) {
+						if (!await this.app.vault.adapter.exists(fileId)) {
+							const file = this.plugin.getFileItem(fileId);
+							unusedIcons.push(file);
+						}
+					}
+					UsageChecker.open(this.plugin, unusedIcons);
 				})
 			)
 		);

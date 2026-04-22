@@ -250,6 +250,10 @@ export default class Strings {
 			gray: 'Gray',
 		},
 	};
+	static usageChecker = {
+		unusedIcons: 'Unused icons',
+		noUnusedIconsFound: 'No unused icons found.',
+	};
 	static categories = {
 		item: 'Item',
 		items: 'Items',
@@ -299,6 +303,7 @@ export default class Strings {
 		changeIconCurrentFile: 'Change icon of the current file',
 	};
 	static settings = {
+		manage: 'Manage',
 		values: {
 			on: 'On',
 			off: 'Off',
@@ -311,7 +316,6 @@ export default class Strings {
 		rulebook: {
 			name: 'Rulebook',
 			desc: 'Set up automated rules for file and folder icons.',
-			manage: 'Manage',
 		},
 		biggerIcons: {
 			name: 'Bigger icons',
@@ -406,9 +410,9 @@ export default class Strings {
 			name: 'Colorless ribbon button',
 			desc: 'Disable icon color for the quick access ribbon button on mobile.',
 		},
-		rememberDeletedItems: {
-			name: 'Remember icons of deleted items',
-			desc: 'Any custom icons will reappear when their item exists again.',
+		viewUnusedIcons: {
+			name: 'View unused icons',
+			desc: 'Clean up icons assigned to files or folders that are no longer in your vault.',
 		},
 		maxBackups: {
 			name: 'Maximum automatic backups',

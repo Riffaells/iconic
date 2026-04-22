@@ -54,6 +54,10 @@
 			"gray": "Grau"
 		}
 	},
+	"usageChecker": {
+		"unusedIcons": "Nicht verwendete Symbole",
+		"noUnusedIconsFound": "Keine nicht verwendeten Symbole gefunden."
+	},
 	"categories": {
 		"item": "Element",
 		"items": "Elemente",
@@ -293,6 +297,7 @@
 		"changeIconCurrentFile": "Symbol der aktuellen Datei ändern"
 	},
 	"settings": {
+		"manage": "Verwalten",
 		"values": {
 			"on": "Ein",
 			"off": "Aus",
@@ -304,8 +309,7 @@
 		},
 		"rulebook": {
 			"name": "Regelbuch",
-			"desc": "Automatisierte Regeln für Datei- und Ordnersymbole einrichten.",
-			"manage": "Verwalten"
+			"desc": "Automatisierte Regeln für Datei- und Ordnersymbole einrichten."
 		},
 		"biggerIcons": {
 			"name": "Größere Symbole",
@@ -400,9 +404,9 @@
 			"name": "Farblose Ribbon-Schaltfläche",
 			"desc": "Symbolfarbe deaktivieren, für die Schnellzugriff zu Ribbon-Schaltfläche auf Mobilgeräten."
 		},
-		"rememberDeletedItems": {
-			"name": "Symbole gelöschter Elemente merken",
-			"desc": "Alle benutzerdefinierten Symbole werden wieder angezeigt, wenn ihr Element wieder existiert."
+		"viewUnusedIcons": {
+			"name": "Nicht verwendete Symbole anzeigen",
+			"desc": "Symbole entfernen, die Dateien oder Ordnern zugewiesen sind, die sich nicht mehr in Ihrem Tresor befinden."
 		},
 		"maxBackups": {
 			"name": "Maximale Anzahl automatischer Backups",

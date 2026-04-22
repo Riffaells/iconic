@@ -1,4 +1,4 @@
-import { BaseComponent, TooltipOptions } from 'obsidian';
+import { BaseComponent, ExtraButtonComponent, TooltipOptions } from 'obsidian';
 import IconButtonComponent from 'src/components/IconButtonComponent.js';
 
 /**
@@ -9,6 +9,7 @@ export default class PathComponent extends BaseComponent {
 	readonly pathEl: HTMLElement;
 	private readonly pathInnerEl: HTMLElement;
 	private readonly iconButton: IconButtonComponent;
+	private removeButton?: ExtraButtonComponent;
 
 	constructor(containerEl: HTMLElement) {
 		super();
@@ -42,6 +43,17 @@ export default class PathComponent extends BaseComponent {
 	}
 
 	/**
+	 * Set tooltip for the remove button.
+	 */
+	setRemoveTooltip(tooltip: string, options?: TooltipOptions): this {
+		if (!this.removeButton) {
+			this.removeButton = new ExtraButtonComponent(this.pathEl).setIcon('lucide-x');
+		}
+		this.removeButton.setTooltip(tooltip, options);
+		return this;
+	}
+
+	/**
 	 * Set 2-3 segments of text representing a path.
 	 */
 	setPathText(tree: string, basename: string, extension?: string): this {
@@ -60,6 +72,25 @@ export default class PathComponent extends BaseComponent {
 	 */
 	onIconClick(callback: () => unknown | Promise<unknown>): this {
 		this.iconButton.onClick(() => callback());
+		return this;
+	}
+
+	/**
+	 * Set click behavior for the remove button.
+	 */
+	onRemoveClick(callback: () => unknown | Promise<unknown>): this {
+		if (!this.removeButton) {
+			this.removeButton = new ExtraButtonComponent(this.pathEl).setIcon('lucide-x');
+		}
+		this.removeButton.onClick(() => callback());
+		return this;
+	}
+
+	/**
+	 * Add a class to the path element.
+	 */
+	setClass(cls: string): this {
+		this.pathEl.addClass(cls);
 		return this;
 	}
 }

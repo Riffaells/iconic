@@ -495,6 +495,20 @@ a.tag {
 	color: var(--text-accent);
 }
 
+/* Delete checker */
+.iconic-delete-checker > .modal-content {
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+}
+.iconic-placeholder {
+	color: var(--text-faint);
+}
+.iconic-placeholder > .extra-setting-button {
+	color: var(--text-faint);
+	pointer-events: none;
+}
+
 /* Indicators */
 .iconic-indicator {
 	pointer-events: none;
