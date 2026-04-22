@@ -298,15 +298,21 @@ export default class RuleManager {
 		// If no rules are enabled, clear out the rulings
 		if (enabledRules.length === 0) {
 			switch (page) {
-				case 'file': if (this.fileRulings.size > 0) {
-					this.fileRulings.clear();
-					this.fileTriggers.clear();
-					return true;
+				case 'file': {
+					if (this.fileRulings.size > 0) {
+						this.fileRulings.clear();
+						this.fileTriggers.clear();
+						return true;
+					}
+					break;
 				}
-				case 'folder': if (this.folderRulings.size > 0) {
-					this.folderRulings.clear();
-					this.folderTriggers.clear();
-					return true;
+				case 'folder': {
+					if (this.folderRulings.size > 0) {
+						this.folderRulings.clear();
+						this.folderTriggers.clear();
+						return true;
+					}
+					break;
 				}
 			}
 			return false;
