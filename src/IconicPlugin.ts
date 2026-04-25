@@ -164,7 +164,7 @@ const DEFAULT_SETTINGS: IconicSettings = {
 	uncolorDrag: false,
 	uncolorSelect: false,
 	uncolorQuick: false,
-	maxBackups: 5,
+	maxBackups: 2,
 	dialogState: {
 		iconMode: true,
 		emojiMode: false,
