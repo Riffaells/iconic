@@ -410,7 +410,8 @@
 		},
 		"maxBackups": {
 			"name": "Jumlah maksimum cadangan otomatis",
-			"desc": "Pilih berapa banyak cadangan pengaturan ikon yang ingin Anda simpan. Cadangan disimpan dengan jarak 3 jam."
+			"desc": "Pilih berapa banyak cadangan pengaturan ikon yang ingin Anda simpan. Cadangan disimpan dengan jarak 3 jam.",
+			"openPluginFolder": "Buka folder plugin"
 		}
 	},
 	"backups": {

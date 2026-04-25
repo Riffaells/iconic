@@ -410,7 +410,8 @@
 		},
 		"maxBackups": {
 			"name": "Maximale Anzahl automatischer Backups",
-			"desc": "Wählen Sie, wie viele Backups Ihrer Symboleinstellungen gespeichert werden sollen. Backups werden im Abstand von 3 Stunden erstellt."
+			"desc": "Wählen Sie, wie viele Backups Ihrer Symboleinstellungen gespeichert werden sollen. Backups werden im Abstand von 3 Stunden erstellt.",
+			"openPluginFolder": "Ordner für Erweiterung öffnen"
 		}
 	},
 	"backups": {

@@ -410,7 +410,8 @@
 		},
 		"maxBackups": {
 			"name": "Nombre maximal de sauvegardes automatiques",
-			"desc": "Choisissez le nombre de sauvegardes de vos paramètres d'icônes à conserver. Les sauvegardes sont espacées de 3 heures."
+			"desc": "Choisissez le nombre de sauvegardes de vos paramètres d'icônes à conserver. Les sauvegardes sont espacées de 3 heures.",
+			"openPluginFolder": "Ouvrir le dossier des module complémentaire"
 		}
 	},
 	"backups": {

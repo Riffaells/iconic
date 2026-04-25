@@ -410,7 +410,8 @@
 		},
 		"maxBackups": {
 			"name": "Copias de seguridad automáticas máximas",
-			"desc": "Elige cuántas copias de seguridad quieres conservar de la configuración de tus íconos. Las copias de seguridad se realizan con un intervalo de 3 horas."
+			"desc": "Elige cuántas copias de seguridad quieres conservar de la configuración de tus íconos. Las copias de seguridad se realizan con un intervalo de 3 horas.",
+			"openPluginFolder": "Abrir la carpeta de complemento"
 		}
 	},
 	"backups": {
