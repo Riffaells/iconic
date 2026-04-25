@@ -92,6 +92,7 @@ export default class BookmarkIconManager extends IconManager {
 			let rule: RuleItem | BookmarkItem = bmark;
 			if (bmark.category === 'file' || bmark.category === 'folder') {
 				rule = this.plugin.ruleManager?.checkRuling(bmark.category, bmark.id, unloading) ?? bmark;
+				if (bmark.category === 'folder') rule.iconDefault = 'lucide-folder';
 			}
 
 			if (bmark.items) {
@@ -119,7 +120,7 @@ export default class BookmarkIconManager extends IconManager {
 
 			if (bmark.items) {
 				// Toggle default icon based on expand/collapse state
-				if (bmark.iconDefault) bmark.iconDefault = iconEl.hasClass('is-collapsed')
+				if (rule.iconDefault) rule.iconDefault = iconEl.hasClass('is-collapsed')
 					? 'lucide-folder-closed'
 					: 'lucide-folder-open';
 				let folderIconEl = selfEl.find(':scope > .iconic-sidekick:not(.tree-item-icon)');

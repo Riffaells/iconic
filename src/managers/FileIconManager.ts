@@ -146,7 +146,7 @@ export default class FileIconManager extends IconManager {
 
 			if (file.items) {
 				// Toggle default icon based on expand/collapse state
-				if (file.iconDefault) file.iconDefault = iconEl.hasClass('is-collapsed')
+				if (rule.iconDefault) rule.iconDefault = iconEl.hasClass('is-collapsed')
 					? 'lucide-folder-closed'
 					: 'lucide-folder-open';
 			}
