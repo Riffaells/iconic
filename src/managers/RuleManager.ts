@@ -536,7 +536,7 @@ export default class RuleManager {
 				matches.push(file);
 			}
 		}
-		return matches;
+		return matches.sort((a, b) => a.id.localeCompare(b.id));
 	}
 
 	/**
@@ -551,7 +551,7 @@ export default class RuleManager {
 				matches.push(folder);
 			}
 		}
-		return matches;
+		return matches.sort((a, b) => a.id.localeCompare(b.id));
 	}
 
 	/**
