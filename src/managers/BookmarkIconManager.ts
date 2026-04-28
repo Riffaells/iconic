@@ -1,16 +1,16 @@
 import { WorkspaceLeaf } from 'obsidian';
-import IconicPlugin, { Category, BookmarkItem, STRINGS } from 'src/IconicPlugin';
-import { RuleItem } from 'src/managers/RuleManager';
-import IconManager from 'src/managers/IconManager';
-import RuleEditor from 'src/dialogs/RuleEditor';
-import IconPicker from 'src/dialogs/IconPicker';
-import { Debouncer } from 'src/utils/Debouncer';
+import IconicPlugin, { Category, BookmarkItem, STRINGS } from 'src/IconicPlugin.js';
+import { RuleItem } from 'src/managers/RuleManager.js';
+import IconManager from 'src/managers/IconManager.js';
+import RuleEditor from 'src/dialogs/RuleEditor.js';
+import IconPicker from 'src/dialogs/IconPicker.js';
+import { Debouncer } from 'src/utils/Debouncer.js';
 
 /**
  * Handles icons in the Bookmarks pane.
  */
 export default class BookmarkIconManager extends IconManager {
-	private containerEl: HTMLElement;
+	private containerEl: HTMLElement | null = null;
 	private isTouchActive = false;
 	private readonly selectionLookup = new Map<HTMLElement, BookmarkItem>();
 	private debouncer = new Debouncer();
@@ -93,7 +93,8 @@ export default class BookmarkIconManager extends IconManager {
 			// Check for an icon ruling
 			let rule: RuleItem | BookmarkItem = bmark;
 			if (bmark.category === 'file' || bmark.category === 'folder') {
-				rule = this.plugin.ruleManager.checkRuling(bmark.category, bmark.id, unloading) ?? bmark;
+				rule = this.plugin.ruleManager?.checkRuling(bmark.category, bmark.id, unloading) ?? bmark;
+				if (bmark.category === 'folder') rule.iconDefault = 'lucide-folder';
 			}
 
 			if (bmark.items) {
@@ -121,7 +122,7 @@ export default class BookmarkIconManager extends IconManager {
 
 			if (bmark.items) {
 				// Toggle default icon based on expand/collapse state
-				if (bmark.iconDefault) bmark.iconDefault = iconEl.hasClass('is-collapsed')
+				if (rule.iconDefault) rule.iconDefault = iconEl.hasClass('is-collapsed')
 					? 'lucide-folder-closed'
 					: 'lucide-folder-open';
 				let folderIconEl = selfEl.find(':scope > .iconic-sidekick:not(.tree-item-icon)');
@@ -191,7 +192,7 @@ export default class BookmarkIconManager extends IconManager {
 	 * When user context-clicks a bookmark, add custom items to the menu.
 	 */
 	private onContextMenu(clickedId: string, clickedCategory: Category): void {
-		this.plugin.menuManager.closeAndFlush();
+		this.plugin.menuManager?.closeAndFlush();
 		const clickedBmark: BookmarkItem = this.plugin.getBookmarkItem(clickedId, clickedCategory);
 		const selectedBmarks: BookmarkItem[] = [];
 
@@ -210,7 +211,7 @@ export default class BookmarkIconManager extends IconManager {
 		const changeTitle = selectedBmarks.length < 2
 			? STRINGS.menu.changeIcon
 			: STRINGS.menu.changeIcons.replace('{#}', selectedBmarks.length.toString());
-		this.plugin.menuManager.addItemAfter('open', item => item
+		this.plugin.menuManager?.addItemAfter('open', item => item
 			.setTitle(changeTitle)
 			.setIcon('lucide-image-plus')
 			.setSection('icon')
@@ -242,7 +243,7 @@ export default class BookmarkIconManager extends IconManager {
 		const removeIcon = clickedBmark.icon || anyIcons ? 'lucide-image-minus' : 'lucide-rotate-ccw';
 
 		if (clickedBmark.icon || clickedBmark.color || anyRemovable) {
-			this.plugin.menuManager.addItem(item => item
+			this.plugin.menuManager?.addItem(item => item
 				.setTitle(removeTitle)
 				.setIcon(removeIcon)
 				.setSection('icon')
@@ -260,17 +261,17 @@ export default class BookmarkIconManager extends IconManager {
 		// Edit rule
 		if (selectedBmarks.length < 2) {
 			const rule = clickedBmark.category === 'file' || clickedBmark.category === 'folder'
-				? this.plugin.ruleManager.checkRuling(clickedBmark.category, clickedBmark.id)
+				? this.plugin.ruleManager?.checkRuling(clickedBmark.category, clickedBmark.id)
 				: null;
 			if (rule) {
-				this.plugin.menuManager.addItem(item => { item
+				this.plugin.menuManager?.addItem(item => { item
 					.setTitle(STRINGS.menu.editRule)
 					.setIcon('lucide-image-play')
 					.setSection('icon')
 					.onClick(() => RuleEditor.open(this.plugin, 'file', rule, newRule => {
 						const isRulingChanged = newRule
-							? this.plugin.ruleManager.saveRule('file', newRule)
-							: this.plugin.ruleManager.deleteRule('file', rule.id);
+							? this.plugin.ruleManager?.saveRule('file', newRule)
+							: this.plugin.ruleManager?.deleteRule('file', rule.id);
 						if (isRulingChanged) {
 							this.plugin.refreshManagers('file');
 						}

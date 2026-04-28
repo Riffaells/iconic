@@ -1,21 +1,22 @@
 import { ButtonComponent, Modal, Setting } from 'obsidian';
-import IconicPlugin, { Category, FileItem, STRINGS } from 'src/IconicPlugin.js';
+import IconicPlugin, { FileItem, STRINGS } from 'src/IconicPlugin.js';
 import PathListComponent from 'src/components/PathListComponent.js';
 import IconPicker from 'src/dialogs/IconPicker.js';
 
 /**
- * Dialog for previewing the items matched by a rule.
+ * Dialog for viewing unused icons found in the data file.
  */
-export default class RuleChecker extends Modal {
+export default class UsageChecker extends Modal {
 	private readonly plugin: IconicPlugin;
-	private readonly page: Category;
-	private readonly matches: FileItem[];
+	private readonly unusedIcons: Set<FileItem>;
 
-	private constructor(plugin: IconicPlugin, page: Category, matches: FileItem[]) {
+	// Components
+	private pathList!: PathListComponent;
+
+	private constructor(plugin: IconicPlugin, unusedIcons: FileItem[]) {
 		super(plugin.app);
 		this.plugin = plugin;
-		this.page = page;
-		this.matches = matches;
+		this.unusedIcons = new Set(unusedIcons);
 
 		// Allow hotkeys in dialog
 		for (const command of this.plugin.dialogCommands) if (command.callback) {
@@ -28,35 +29,20 @@ export default class RuleChecker extends Modal {
 	}
 
 	/**
-	 * Open a dialog to preview a list of matches.
+	 * Open a dialog to view a list of unused icons.
 	 */
-	static open(plugin: IconicPlugin, page: Category, matches: FileItem[]): void {
-		new RuleChecker(plugin, page, matches).open();
+	static open(plugin: IconicPlugin, unusedIcons: FileItem[]): void {
+		new UsageChecker(plugin, unusedIcons).open();
 	}
 
 	/**
 	 * @override
 	 */
-	onOpen(): void {
+	async onOpen(): Promise<void> {
 		this.containerEl.addClass('mod-confirmation');
 		this.modalEl.addClass('iconic-rule-checker');
 		this.contentEl.addClass('iconic-highlight-tree');
-
-		switch (this.page) {
-			case 'file': {
-				this.setTitle(this.matches.length === 1
-					? STRINGS.ruleChecker.fileMatch
-					: STRINGS.ruleChecker.filesMatch.replace('{#}', this.matches.length.toString())
-				);
-				break;
-			}
-			case 'folder': {
-				this.setTitle(this.matches.length === 1
-					? STRINGS.ruleChecker.folderMatch
-					: STRINGS.ruleChecker.foldersMatch.replace('{#}', this.matches.length.toString())
-				);
-			}
-		}
+		this.setTitle(STRINGS.usageChecker.unusedIcons);
 
 		// BUTTONS: Highlight
 		const buttons: ButtonComponent[] = [];
@@ -84,7 +70,6 @@ export default class RuleChecker extends Modal {
 			})
 			.addButton(button => { button
 				.setButtonText(STRINGS.ruleEditor.source.extension)
-				.setDisabled(this.page !== 'file')
 				.onClick(() => {
 					buttons.forEach(button => button.buttonEl.removeClass('iconic-button-selected'));
 					button.buttonEl.addClass('iconic-button-selected');
@@ -94,25 +79,40 @@ export default class RuleChecker extends Modal {
 				buttons.push(button);
 			});
 
-		// LIST: Matches
-		const pathList = new PathListComponent(this.contentEl);
-		const defaultIcon = this.page === 'folder' ? 'lucide-folder' : 'lucide-file';
-		for (const match of this.matches) {
-			const { tree, basename, extension } = this.plugin.splitFilePath(match.id);
-			const rule = this.plugin.ruleManager?.checkRuling(this.page, match.id) ?? match;
-			pathList.addPath(path => path
-				.setPathText(tree, basename, extension)
-				.setIcon(rule.icon ?? defaultIcon)
-				.setIconColor(rule.color ?? null)
+		// LIST: Unused icons
+		this.pathList = new PathListComponent(this.contentEl);
+		for (const file of this.unusedIcons) {
+			const { tree, basename, extension } = this.plugin.splitFilePath(file.id);
+			this.pathList.addPath(path => path
+				.setIcon(file.icon ?? null)
+				.setIconColor(file.color ?? null)
 				.setIconTooltip(STRINGS.iconPicker.changeIcon)
-				.onIconClick(() => IconPicker.openSingle(this.plugin, match, (newIcon, newColor) => {
-					this.plugin.saveFileIcon(match, newIcon, newColor);
-					match.icon = newIcon;
-					match.color = newColor;
-					path.setIcon(newIcon ?? defaultIcon);
+				.onIconClick(() => IconPicker.openSingle(this.plugin, file, (newIcon, newColor) => {
+					this.plugin.saveFileIcon(file, newIcon, newColor);
+					file.icon = newIcon;
+					file.color = newColor;
+					path.setIcon(newIcon);
 					path.setIconColor(newColor);
 				}))
+				.setPathText(tree, basename, extension)
+				.setRemoveTooltip(STRINGS.menu.removeIcon)
+				.onRemoveClick(() => {
+					this.plugin.saveFileIcon(file, null, null);
+					this.unusedIcons.delete(file);
+					path.pathEl.remove();
+					if (this.unusedIcons.size === 0) this.addPlaceholderItem();
+				})
 			);
 		}
+
+		if (this.unusedIcons.size === 0) this.addPlaceholderItem();
+	}
+
+	private addPlaceholderItem(): void {
+		this.pathList.addPath(path => path
+			.setIcon('lucide-check')
+			.setPathText('', STRINGS.usageChecker.noUnusedIconsFound)
+			.setClass('iconic-placeholder')
+		);
 	}
 }

@@ -1,6 +1,6 @@
 import { TFile } from 'obsidian';
-import IconicPlugin, { Category, Item, FileItem, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin';
-import { LRUCache } from 'src/utils/LRUCache';
+import IconicPlugin, { Category, Item, FileItem, ICONS, EMOJIS, STRINGS } from 'src/IconicPlugin.js';
+import { LRUCache } from 'src/utils/LRUCache.js';
 
 const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
@@ -27,7 +27,7 @@ export default class RuleManager {
 	private readonly folderRulings = new Map<string, RuleItem>();
 	private readonly fileTriggers = new Set<RuleTrigger>();
 	private readonly folderTriggers = new Set<RuleTrigger>();
-	private triggerTimerId: number;
+	private triggerTimerId?: number;
 
 	constructor(plugin: IconicPlugin) {
 		this.plugin = plugin;
@@ -166,7 +166,7 @@ export default class RuleManager {
 			id: this.newRuleId(page),
 			name: STRINGS.rulePicker.untitledRule,
 			category: 'rule',
-			iconDefault: this.plugin.ruleManager.getPageIcon(page),
+			iconDefault: this.getPageIcon(page),
 			icon: null,
 			color: null,
 			match: 'all',
@@ -318,15 +318,21 @@ export default class RuleManager {
 		// If no rules are enabled, clear out the rulings
 		if (enabledRules.length === 0) {
 			switch (page) {
-				case 'file': if (this.fileRulings.size > 0) {
-					this.fileRulings.clear();
-					this.fileTriggers.clear();
-					return true;
+				case 'file': {
+					if (this.fileRulings.size > 0) {
+						this.fileRulings.clear();
+						this.fileTriggers.clear();
+						return true;
+					}
+					break;
 				}
-				case 'folder': if (this.folderRulings.size > 0) {
-					this.folderRulings.clear();
-					this.folderTriggers.clear();
-					return true;
+				case 'folder': {
+					if (this.folderRulings.size > 0) {
+						this.folderRulings.clear();
+						this.folderTriggers.clear();
+						return true;
+					}
+					break;
 				}
 			}
 			return false;
@@ -535,9 +541,9 @@ export default class RuleManager {
 			|| rule1?.match !== rule2?.match
 			|| rule1?.conditions?.length !== rule2?.conditions?.length
 			|| rule1?.conditions?.some((condition, i) => {
-				return condition.source !== rule2?.conditions[i].source
-					|| condition.operator !== rule2?.conditions[i].operator
-					|| condition.value !== rule2?.conditions[i].value;
+				return condition.source !== rule2?.conditions[i]?.source
+					|| condition.operator !== rule2?.conditions[i]?.operator
+					|| condition.value !== rule2?.conditions[i]?.value;
 			}) === true;
 	}
 
@@ -573,9 +579,8 @@ export default class RuleManager {
 					matches.push(item);
 				}
 			}
-			return matches;
-		}
-
+			return matches.sort((a, b) => a.id.localeCompare(b.id));
+	}
 
 	/**
 	 * Judge how many folders match a given rule.
@@ -589,9 +594,8 @@ export default class RuleManager {
 					matches.push(item);
 				}
 			}
-			return matches;
-		}
-
+			return matches.sort((a, b) => a.id.localeCompare(b.id));
+	}
 
 	/**
 	 * Judge whether a given file matches a given rule.
